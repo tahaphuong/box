@@ -1,10 +1,9 @@
-import type { GeneratorConfig } from "@/models";
-import { Instance, Rectangle } from "@/models"
+import { type GeneratorConfig, TestInstance, Rectangle } from "@/models"
 /**
  * Generate a random instance with specified parameter
  * @param config - Configuration for each instance
  */
-export function generateInstance(config: GeneratorConfig): Instance {
+export function generateInstance(config: GeneratorConfig): TestInstance {
   const { L, numRectangles, minWidth, maxWidth, minLength, maxLength } = config;
 
   const rectangles: Rectangle[] = [];
@@ -15,7 +14,7 @@ export function generateInstance(config: GeneratorConfig): Instance {
     rectangles.push(new Rectangle(randomWidth, randomLength));
   }
 
-  return new Instance(L, rectangles);
+  return new TestInstance(L, rectangles);
 }
 
 /**
@@ -24,6 +23,6 @@ export function generateInstance(config: GeneratorConfig): Instance {
  * @param config - Configuration for each instance
  * @returns Array of Instance objects
  */
-export function generateInstances(count: number, config: GeneratorConfig): Instance[] {
+export function generateInstances(count: number, config: GeneratorConfig): TestInstance[] {
   return Array.from({ length: count }, () => generateInstance(config));
 }
