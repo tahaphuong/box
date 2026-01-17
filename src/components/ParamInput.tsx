@@ -18,15 +18,15 @@ export function ParamInput() {
   const [lengthRange, setLengthRange] = useState<string>("30-70")
   const [error, setError] = useState<string>("")
 
-  const { setTestInstance } = useContext(MainContext) || {};
+  const { setInstance } = useContext(MainContext) || {};
 
   const handleGenerate = () => {
     try {
       setError("")
       const config = parseInputToConfig(L, numRectangles, widthRange, lengthRange)
       let instance = generateInstance(config)
-      if (setTestInstance) {
-        setTestInstance(instance)
+      if (setInstance) {
+        setInstance(instance)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid input")

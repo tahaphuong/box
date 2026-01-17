@@ -41,16 +41,8 @@ export function CurrentInstance() {
   const [algo, setAlgo] = useState<string>("greedy")
   const [option, setOption] = useState<string>("1")
   const [openOption, setOpenOption] = useState<boolean>(false)
-  const { testInstance } = useContext(MainContext) || {};
+  const { instance } = useContext(MainContext) || {};
 
-  const rows = [
-    { nr: 1, width: 10, height: 20 },
-    { nr: 2, width: 10, height: 20 },
-    { nr: 3, width: 10, height: 20 },
-    { nr: 4, width: 10, height: 20 },
-    { nr: 5, width: 10, height: 20 },
-    { nr: 6, width: 10, height: 20 },
-  ]
   const isScrollable = rows.length > 3
 
 
@@ -61,17 +53,17 @@ export function CurrentInstance() {
   };
 
   const handleSolve = () => {
-    console.log(testInstance)
+    console.log(instance)
   }
 
   return (
     <div className="grid w-full gap-2 text-left">
       <div className="text-xl font-bold text-gray-800">2. Current Instance</div>
-      {!testInstance ? <div>No instance currently</div> :
+      {!instance ? <div>No instance currently</div> :
         <div className="w-full">
           <div className="text-sm">
-            <div>Box length L = {testInstance.L}</div>
-            <div>Number of rectangles N = { testInstance.getCount() }</div>
+            <div>Box length L = {instance.L}</div>
+            <div>Number of rectangles N = { instance.getCount() }</div>
           </div>
           <div className={`mt-2 relative w-70 rounded-md border ${isScrollable ? 'h-34 overflow-y-auto' : ''}`}>
             <Table>
@@ -83,7 +75,7 @@ export function CurrentInstance() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {testInstance.rectangles.map((rect: Rectangle, index: number) => (
+                {instance.rectangles.map((rect: Rectangle, index: number) => (
                   <TableRow key={index} className="h-8">
                     <TableCell className="font-medium w-0.5 py-1">{index+1}</TableCell>
                     <TableCell className="w-3 py-1">{rect.width}</TableCell>

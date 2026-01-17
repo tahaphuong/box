@@ -1,2 +1,2 @@
-export { generateInstance, generateInstances } from '@/logic/generate-instance';
-export { parseInputToConfig } from '@/logic/handle-input';
+export { generateInstance, generateInstances } from '@/logic/generateInstance';
+export { parseInputToConfig } from '@/logic/handleInput';

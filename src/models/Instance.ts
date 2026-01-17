@@ -1,7 +1,7 @@
 
 import { Rectangle } from ".";
 
-export class TestInstance {
+export class Instance {
   L: number;
   rectangles: Rectangle[];
 
