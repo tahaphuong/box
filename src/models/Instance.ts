@@ -1,4 +1,3 @@
-
 import { Rectangle } from ".";
 
 export class Instance {
@@ -10,19 +9,11 @@ export class Instance {
     this.rectangles = rectangles;
   }
 
-  getTotalArea(): number {
-    return this.rectangles.reduce((sum, rect) => sum + rect.getArea(), 0);
-  }
-
-  getCount(): number {
-    return this.rectangles.length;
-  }
-
   sortByLargerSide() {
-    this.rectangles.sort((a, b) => b.getLargerSide() - a.getLargerSide());
+    return [...this.rectangles].sort((a, b) => b.getLargerSide() - a.getLargerSide());
   }
   sortByArea() {
-    this.rectangles.sort((a, b) => b.getArea() - a.getArea());
+    return [...this.rectangles].sort((a, b) => b.getArea() - a.getArea());
   }
 
 }

@@ -3,9 +3,9 @@
  */
 export interface GeneratorConfig {
   L: number;
-  numRectangles: number;
-  minWidth: number;
-  maxWidth: number;
-  minLength: number;
-  maxLength: number;
+  numRect: number;
+  minW: number;
+  maxW: number;
+  minL: number;
+  maxL: number;
 }

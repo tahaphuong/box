@@ -1,4 +1,7 @@
-export { Rectangle } from '@/models/Rectangle';
-export type { GeneratorConfig } from '@/models/GeneratorConfig';
-export { Instance } from '@/models/Instance';
+export type { GeneratorConfig } from './GeneratorConfig';
+export { ALGOS, type Algo, type AlgoOption, type AlgoConfig } from './AlgoConfig';
 
+export { Rectangle } from './Rectangle';
+export { Instance } from './Instance';
+export { Solution } from './Solution';
+export { Box } from './Box';

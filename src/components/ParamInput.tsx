@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { useState, useContext } from "react"
 
-import { parseInputToConfig, generateInstance } from "@/logic"
+import { parseInputToConfig, generateInstance } from "@/handlers"
 import { MainContext } from "@/App"
 
 export function ParamInput() {
   const [L, setL] = useState<string>("70")
-  const [numRectangles, setNumRectangles] = useState<string>("10")
+  const [numRect, setNumRectangles] = useState<string>("10")
   const [widthRange, setWidthRange] = useState<string>("20-50")
   const [lengthRange, setLengthRange] = useState<string>("30-70")
   const [error, setError] = useState<string>("")
@@ -23,7 +23,7 @@ export function ParamInput() {
   const handleGenerate = () => {
     try {
       setError("")
-      const config = parseInputToConfig(L, numRectangles, widthRange, lengthRange)
+      const config = parseInputToConfig(L, numRect, widthRange, lengthRange)
       let instance = generateInstance(config)
       if (setInstance) {
         setInstance(instance)
@@ -62,7 +62,7 @@ export function ParamInput() {
           <InputGroupInput
             type="number"
             placeholder="10"
-            value={numRectangles}
+            value={numRect}
             onChange={(e) => setNumRectangles(e.target.value)}
           />
           <InputGroupAddon>
