@@ -15,7 +15,7 @@ export function ParamInput() {
   const [L, setL] = useState<string>("70")
   const [numRect, setNumRectangles] = useState<string>("10")
   const [widthRange, setWidthRange] = useState<string>("20-50")
-  const [lengthRange, setLengthRange] = useState<string>("30-70")
+  const [heightRange, setHeightRange] = useState<string>("30-70")
   const [error, setError] = useState<string>("")
 
   const { setInstance } = useContext(MainContext) || {};
@@ -23,7 +23,7 @@ export function ParamInput() {
   const handleGenerate = () => {
     try {
       setError("")
-      const config = parseInputToConfig(L, numRect, widthRange, lengthRange)
+      const config = parseInputToConfig(L, numRect, widthRange, heightRange)
       let instance = generateInstance(config)
       if (setInstance) {
         setInstance(instance)
@@ -84,8 +84,8 @@ export function ParamInput() {
           <InputGroupInput
             type="text"
             placeholder="E.g: 30-70"
-            value={lengthRange}
-            onChange={(e) => setLengthRange(e.target.value)}
+            value={heightRange}
+            onChange={(e) => setHeightRange(e.target.value)}
           />
           <InputGroupAddon>
             <Label className="text-gray-700">Height range📏</Label>

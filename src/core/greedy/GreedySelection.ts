@@ -1,4 +1,4 @@
-import type { Rectangle } from "@/models";
+import type { Rectangle } from "@/models/binpacking";
 
 export abstract class GreedySelection<Item> {
   items: Item[]
@@ -13,7 +13,7 @@ export abstract class GreedySelection<Item> {
 
 export class LargestAreaFirst extends GreedySelection<Rectangle> {
   preProcess(): void {
-    this.items.sort((a, b) => b.getArea() - a.getArea());
+    this.items.sort((a, b) => b.area - a.area);
   }
   getNextItem(): Rectangle | null {
     if (this.index == this.items.length) {

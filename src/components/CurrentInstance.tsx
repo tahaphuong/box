@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/popover"
 import { ArrowRight, Check, ChevronsUpDown } from "lucide-react"
 import { MainContext } from "@/App"
-import { ALGOS, type Rectangle, Instance, type Algo, type AlgoOption, type AlgoConfig } from "@/models"
-import { handleSolve } from "@/handlers"
+import { ALGOS, type Algo, type AlgoOption, type AlgoConfig } from "@/models"
+import { type Rectangle, Instance } from "@/models/binpacking"
+import { handleSolveBinPacking } from "@/handlers"
 
 // Define the default Algo and AlgoOption as the first values in list
 const DEFAULT_ALGO: Algo = Object.keys(ALGOS)[0] as Algo;
@@ -32,16 +33,18 @@ const TableRectangles = ({ isScrollable, instance }: { isScrollable: boolean; in
         <TableHeader>
           <TableRow className="h-6 py-0">
             <TableHead className="w-0.5">Id</TableHead>
-            <TableHead className="w-3">Width</TableHead>
-            <TableHead className="w-3">Height</TableHead>
+            <TableHead className="w-2.5">Width</TableHead>
+            <TableHead className="w-2.5">Height</TableHead>
+            <TableHead className="w-0.5">Rotated</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {instance.rectangles.map((rect: Rectangle) => (
             <TableRow key={rect.id} className="h-8">
               <TableCell className="font-medium w-0.5 py-1">{rect.id}</TableCell>
-              <TableCell className="w-3 py-1">{rect.width}</TableCell>
-              <TableCell className="w-3 py-1">{rect.length}</TableCell>
+              <TableCell className="w-2.5 py-1">{rect.getWidth}</TableCell>
+              <TableCell className="w-2.5 py-1">{rect.getHeight}</TableCell>
+              <TableCell className="w-0.5 py-1">{rect.rotated ? "yes" : "no"}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -100,7 +103,10 @@ export function CurrentInstance() {
   const onClickSolve = (): void => {
     const config: AlgoConfig = { algo, option };
     if (instance && setSolution) {
-      setSolution(handleSolve(config, instance));
+      const sol = handleSolveBinPacking(config, instance);
+      console.log(sol);
+      setSolution(sol);
+
     }
   }
 

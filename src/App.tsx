@@ -5,7 +5,7 @@ import CurrentInstance from '@/components/CurrentInstance'
 import Playground from '@/components/Playground'
 
 import { createContext, useState, type Dispatch, type SetStateAction } from 'react';
-import { Instance, Solution } from '@/models'
+import { Instance, Solution } from '@/models/binpacking'
 
 export const MainContext = createContext<{
   instance: Instance | null;

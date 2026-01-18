@@ -6,6 +6,6 @@ export interface GeneratorConfig {
   numRect: number;
   minW: number;
   maxW: number;
-  minL: number;
-  maxL: number;
+  minH: number;
+  maxH: number;
 }

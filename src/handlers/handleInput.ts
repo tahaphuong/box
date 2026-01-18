@@ -1,4 +1,4 @@
-import type { GeneratorConfig } from "@/models";
+import type { GeneratorConfig } from "@/models/binpacking";
 
 
 export function validateGeneratorConfig(config: GeneratorConfig): boolean {
@@ -14,16 +14,16 @@ export function validateGeneratorConfig(config: GeneratorConfig): boolean {
     throw new Error('Width must be between 1 and L (box length)');
   }
 
-  if (config.minL < 1 || config.maxL > config.L) {
+  if (config.minH < 1 || config.maxH > config.L) {
     throw new Error('Height must be between 1 and L (box length)');
   }
 
   if (config.minW > config.maxW) {
-    throw new Error('minW must be less than or equal to maxW');
+    throw new Error('Min width must be less than or equal to max width');
   }
 
-  if (config.minL > config.maxL) {
-    throw new Error('minL must be less than or equal to maxL');
+  if (config.minH > config.maxH) {
+    throw new Error('Min height must be less than or equal to max height');
   }
 
   return true;
@@ -46,7 +46,7 @@ export function parseInputToConfig(
   L: number | string,
   numRect: number | string,
   widthRange: string,
-  lengthRange: string
+  heightRange: string
 ): GeneratorConfig {
 
   const parsedL = parseInt(String(L), 10);
@@ -60,15 +60,15 @@ export function parseInputToConfig(
   }
 
   const [minW, maxW] = parseRange('Width', widthRange);
-  const [minL, maxL] = parseRange('Length', lengthRange);
+  const [minH, maxH] = parseRange('Height', heightRange);
 
   const config: GeneratorConfig = {
     L: parsedL,
     numRect: parsedNumRectangles,
     minW,
     maxW,
-    minL,
-    maxL,
+    minH,
+    maxH,
   };
 
   // Validate the configuration

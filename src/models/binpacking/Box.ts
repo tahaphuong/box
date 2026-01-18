@@ -5,7 +5,6 @@ export class Box {
   L: number;
   rectangles: Rectangle[]; // list rectangles in this box
 
-
   constructor(id: number, L: number) {
     this.id = id;
     this.L = L;
