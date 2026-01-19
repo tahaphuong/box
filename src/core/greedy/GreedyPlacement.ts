@@ -7,7 +7,7 @@ export interface GreedyPlacement<Item, SOL> {
 class Shelf {
   x: number;
   rectangles: Rectangle[];
-  heightGaps: number[]; // height gaps of rectangles
+  // heightGaps: number[]; // height gaps of rectangles
 
   readonly y: number; // position of shelf in box
   readonly height: number;
@@ -18,7 +18,7 @@ class Shelf {
 
     this.x = 0;
     this.rectangles = [];
-    this.heightGaps = [];
+    // this.heightGaps = [];
   }
 
   check(rect: Rectangle, shelfWidth: number): boolean {
@@ -31,7 +31,7 @@ class Shelf {
 
     this.x = this.x + rect.getWidth;
     this.rectangles.push(rect);
-    this.heightGaps.push(this.height - rect.getHeight);
+    // this.heightGaps.push(this.height - rect.getHeight);
   }
 }
 
