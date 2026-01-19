@@ -14,14 +14,16 @@ export class GreedyAlgo<Item, SOL extends AlgoSolution> implements AlgoInterface
   }
 
   solve(): SOL {
-    // 2. Iteratively getNextItem and evaluate
+    const start = performance.now();
+
     let item = this.selection.getNextItem();
     while (item) {
-      // 3. Add if adding to Solution is feasible (doesn't violate constraints)
       this.placement.checkThenAdd(item, this.solution);
       item = this.selection.getNextItem();
     }
+
+    const runtime = performance.now() - start;
+    this.solution.setRunTime(runtime);
     return this.solution;
   }
-
 }

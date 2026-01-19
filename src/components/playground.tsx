@@ -19,7 +19,10 @@ export function Playground() {
   return (
     <div>
       <div className="text-xl font-bold text-gray-800 mb-3">3. Playground</div>
-      <div className="text-center mb-4">Number of boxes: {solution.boxes.length}</div>
+      <div className="text-center mb-1"><strong>Number of boxes:</strong> {solution.boxes.length}</div>
+      <div className="text-center mb-1"><strong>Wasted area:</strong> {solution.getWastedArea()}</div>
+      <div className="text-center mb-4"><strong>Run time:</strong> {solution.getFormattedRunTime()}</div>
+
 
       <div className="flex flex-wrap gap-1 md:gap-2">
         {solution.boxes.map((box) => (

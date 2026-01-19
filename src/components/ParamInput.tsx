@@ -5,24 +5,24 @@ import {
 } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Loader2 } from "lucide-react"
 import { useState, useContext } from "react"
 
 import { parseInputToConfig, generateInstance } from "@/handlers"
 import { MainContext } from "@/App"
 
 export function ParamInput() {
-  const [L, setL] = useState<string>("70")
-  const [numRect, setNumRectangles] = useState<string>("10")
-  const [widthRange, setWidthRange] = useState<string>("20-50")
-  const [heightRange, setHeightRange] = useState<string>("30-70")
+  const [L, setL] = useState<string>("200")
+  const [numRect, setNumRectangles] = useState<string>("1000")
+  const [widthRange, setWidthRange] = useState<string>("20-200")
+  const [heightRange, setHeightRange] = useState<string>("20-200")
   const [error, setError] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const { setInstance } = useContext(MainContext) || {};
 
   const handleGenerate = () => {
     try {
-      setError("")
       const config = parseInputToConfig(L, numRect, widthRange, heightRange)
       let instance = generateInstance(config)
       if (setInstance) {
@@ -30,7 +30,16 @@ export function ParamInput() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid input")
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  const onClickGenerate = () => {
+    setIsLoading(true);
+    setError("");
+
+    setTimeout(() => handleGenerate(), 0);
   }
 
   return (
@@ -98,11 +107,13 @@ export function ParamInput() {
       )}
 
       <Button
-        className="mt-2"
+        className={`mt-2 ${isLoading ? "opacity-50" : "opacity-100"}`}
         variant='default'
-        onClick={handleGenerate}
+        onClick={onClickGenerate}
+        disabled={isLoading}
       >
-        <span className="text-sm">Generate instance</span> <ArrowRight />
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4" /> : <ArrowRight className="ml-2 h-4 w-4" />}
+        <span className="text-sm">{isLoading ? "Generating..." : "Generate instance"}</span>
       </Button>
     </div>
   )

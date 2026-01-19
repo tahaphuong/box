@@ -16,9 +16,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ArrowRight, Check, ChevronsUpDown } from "lucide-react"
+import { ArrowRight, Check, ChevronsUpDown, Loader2 } from "lucide-react"
 import { MainContext } from "@/App"
-import type { AlgoConfig, AlgoType, GreedyOptionType, LocalOptionType } from "@/models"
+import type { AlgoType, GreedyOptionType, LocalOptionType } from "@/models"
 import { ALGOS, Algo, GreedyOption } from "@/models"
 import { type Rectangle, Instance } from "@/models/binpacking"
 import { handleSolveBinPacking } from "@/handlers"
@@ -80,6 +80,7 @@ export function CurrentInstance() {
   const [algo, setAlgo] = useState<AlgoType>(Algo.GREEDY)
   const [option, setOption] = useState<GreedyOptionType | LocalOptionType>(GreedyOption.LONGEST)
   const [openOption, setOpenOption] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const { instance, setSolution } = useContext(MainContext) ?? { instance: null };
 
   const isScrollable: boolean = !instance ? false : instance.rectangles.length > 3
@@ -99,11 +100,16 @@ export function CurrentInstance() {
   };
 
   const onClickSolve = (): void => {
-    const config: AlgoConfig = { algo, option };
-    if (instance && setSolution) {
-      const sol = handleSolveBinPacking(config, instance);
-      setSolution(sol);
+    if (!instance || !setSolution) {
+      return
     }
+    setIsLoading(true);
+    setTimeout(() => {
+      setSolution(null);
+      const sol = handleSolveBinPacking({ algo, option }, instance);
+      setSolution(sol);
+      setIsLoading(false);
+    }, 0);
   }
 
   return (
@@ -159,8 +165,9 @@ export function CurrentInstance() {
           ))}
 
 
-          <Button className="mt-2" variant='default' onClick={onClickSolve}>
-            <span className="text-sm">Solve</span> <ArrowRight />
+          <Button className={`mt-2 ${isLoading ? "opacity-50" : "opacity-100"}`} variant='default' onClick={onClickSolve} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4" /> : <ArrowRight className="ml-2 h-4 w-4" />}
+            <span className="text-sm">{isLoading ? "Solving..." : "Solve"}</span>
           </Button>
         </div>}
     </div>

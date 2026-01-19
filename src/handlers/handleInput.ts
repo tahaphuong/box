@@ -6,8 +6,8 @@ export function validateGeneratorConfig(config: GeneratorConfig): boolean {
     throw new Error('Box length L must be between 1 and 10000');
   }
 
-  if (config.numRect < 1 || config.numRect > 1000) {
-    throw new Error('Number of rectangles must be between 1 and 1000');
+  if (config.numRect < 1 || config.numRect > 10000) {
+    throw new Error('Number of rectangles must be between 1 and 10000');
   }
 
   if (config.minW < 1 || config.maxW > config.L) {

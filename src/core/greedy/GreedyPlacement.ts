@@ -28,8 +28,9 @@ class Shelf {
   add(rect: Rectangle): void {
     rect.x = this.x;
     rect.y = this.y;
-    this.rectangles.push(rect);
+
     this.x = this.x + rect.getWidth;
+    this.rectangles.push(rect);
     //this.heightGaps.push(this.height - rect.getHeight);
   }
 }
