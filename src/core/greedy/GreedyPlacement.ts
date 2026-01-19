@@ -117,3 +117,14 @@ export class ShelfFirstFit implements GreedyPlacement<Rectangle, Solution> {
   }
 
 }
+
+
+// Greedy Selection handler
+export function createGreedyPlacement(option: string = "SFF"): GreedyPlacement<Rectangle, Solution> {
+  switch (option) {
+    case "SBHF":
+    case "SFF":
+    default:
+      return new ShelfFirstFit()
+  }
+}

@@ -18,13 +18,10 @@ import {
 } from "@/components/ui/popover"
 import { ArrowRight, Check, ChevronsUpDown } from "lucide-react"
 import { MainContext } from "@/App"
-import { ALGOS, type Algo, type AlgoOption, type AlgoConfig } from "@/models"
+import type { AlgoConfig, AlgoType, GreedyOptionType, LocalOptionType } from "@/models"
+import { ALGOS, Algo, GreedyOption } from "@/models"
 import { type Rectangle, Instance } from "@/models/binpacking"
 import { handleSolveBinPacking } from "@/handlers"
-
-// Define the default Algo and AlgoOption as the first values in list
-const DEFAULT_ALGO: Algo = Object.keys(ALGOS)[0] as Algo;
-const DEFAULT_ALGO_OPTION: AlgoOption<Algo> = Object.keys(ALGOS[DEFAULT_ALGO].options)[0] as AlgoOption<Algo>;
 
 const TableRectangles = ({ isScrollable, instance }: { isScrollable: boolean; instance: Instance }) => {
   return (
@@ -53,7 +50,7 @@ const TableRectangles = ({ isScrollable, instance }: { isScrollable: boolean; in
 };
 
 const PopOverOptions = ({algoData, option, onSelectOption}: {
-  algoData: typeof ALGOS[Algo]; option: AlgoOption<Algo> | null; onSelectOption: (value: string) => void;}) => {
+  algoData: typeof ALGOS[typeof Algo.GREEDY | typeof Algo.LOCAL]; option: string | null; onSelectOption: (value: string) => void;}) => {
   return (
     <PopoverContent className="w-45 p-0">
       <Command>
@@ -80,23 +77,24 @@ const PopOverOptions = ({algoData, option, onSelectOption}: {
 };
 
 export function CurrentInstance() {
-  const [algo, setAlgo] = useState<Algo>(DEFAULT_ALGO)
-  const [option, setOption] = useState<AlgoOption<Algo>>(DEFAULT_ALGO_OPTION)
+  const [algo, setAlgo] = useState<AlgoType>(Algo.GREEDY)
+  const [option, setOption] = useState<GreedyOptionType | LocalOptionType>(GreedyOption.LONGEST)
   const [openOption, setOpenOption] = useState<boolean>(false)
   const { instance, setSolution } = useContext(MainContext) ?? { instance: null };
 
   const isScrollable: boolean = !instance ? false : instance.rectangles.length > 3
 
   const onSelectAlgo = (value: string): void => {
-    const algoKey = value as Algo;
-    const firstOption = Object.keys(ALGOS[algoKey].options)[0] as AlgoOption<Algo>;
+    const algoKey = value as AlgoType;
+    const firstOption = Object.keys(ALGOS[algoKey].options)[0];
+
     setAlgo(algoKey);
     setOption(firstOption);
     setOpenOption(false);
   };
 
   const onSelectOption = (value: string): void => {
-    setOption(value as AlgoOption<Algo>)
+    setOption(value as GreedyOptionType | LocalOptionType)
     setOpenOption(false)
   };
 
@@ -104,9 +102,7 @@ export function CurrentInstance() {
     const config: AlgoConfig = { algo, option };
     if (instance && setSolution) {
       const sol = handleSolveBinPacking(config, instance);
-      console.log(sol);
       setSolution(sol);
-
     }
   }
 
@@ -125,7 +121,7 @@ export function CurrentInstance() {
           {/* Choose algorithm: greedy or local search */}
           <RadioGroup className="flex justify-items-start mt-2" value={algo} onValueChange={onSelectAlgo}>
             <Label className="font-medium">Algorithm:</Label>
-            {(Object.entries(ALGOS)as Array<[Algo, typeof ALGOS[Algo]]>).map(([key, val]) => (
+            {(Object.entries(ALGOS) as Array<[AlgoType, typeof ALGOS[keyof typeof ALGOS]]>).map(([key, val]) => (
               <div key={key} className="flex items-center space-x-2">
                 <RadioGroupItem value={key} id={key} />
                 <Label htmlFor={key} className="font-normal text-sm">{val.label}</Label>
@@ -137,7 +133,7 @@ export function CurrentInstance() {
           </RadioGroup>
 
           {/* Algorithm options selector */}
-          {(Object.entries(ALGOS) as Array<[Algo, typeof ALGOS[Algo]]>).map(([key, val]) => (
+          {(Object.entries(ALGOS) as Array<[AlgoType, typeof ALGOS[keyof typeof ALGOS]]>).map(([key, val]) => (
             algo === key && (
               <div key={key} className="flex justify-start gap-2 align-middle">
                 <Label className="font-medium">

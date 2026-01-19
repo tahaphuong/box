@@ -1,60 +1,56 @@
-import { LargestAreaFirst, LongestSideFirst } from "@/core/greedy";
-import type { GreedySelection } from "@/core/greedy";
-import type { Rectangle } from "@/models/binpacking";
+export const Algo = {
+  GREEDY: "greedy",
+  LOCAL: "local",
+} as const;
+
+export const GreedyOption = {
+  LONGEST: "longest",
+  LARGEST: "largest",
+};
+
+export const LocalOption = {
+  GEOMETRY: "geometry",
+  RULE: "rule",
+  OVERLAP: "overlap",
+};
 
 export const ALGOS = {
-  greedy: {
+  [Algo.GREEDY]: {
     label: "Greedy",
     optionLabel: "Selection strategy",
     options: {
-      longest: "Longest side",
-      largest: "Largest area",
+      [GreedyOption.LONGEST]: "Longest side",
+      [GreedyOption.LARGEST]: "Largest area",
     },
   },
-  local: {
+  [Algo.LOCAL]: {
     label: "Local Search",
     optionLabel: "Neighborhood",
     options: {
-      geometry: "Geometry-based",
-      rule: "Rule-based",
-      overlap: "Overlap",
+      [LocalOption.GEOMETRY]: "Geometry-based",
+      [LocalOption.RULE]: "Rule-based",
+      [LocalOption.OVERLAP]: "Overlap",
     },
   },
 } as const;
 
-export type Algo = keyof typeof ALGOS;
 
-export type AlgoOption<A extends Algo> =
-  keyof typeof ALGOS[A]["options"];
+export type AlgoType = typeof Algo[keyof typeof Algo];
+export type GreedyOptionType = typeof GreedyOption[keyof typeof GreedyOption];
+export type LocalOptionType = typeof LocalOption[keyof typeof LocalOption];
+export type AlgoConfig =
+  | { algo: typeof Algo.GREEDY; option: GreedyOptionType }
+  | { algo: typeof Algo.LOCAL; option: LocalOptionType };
 
-export type AlgoConfig<A extends Algo = Algo> = {
-  algo: A;
-  option: AlgoOption<A>;
-};
 
-export function createGreedySelection(
-  option: AlgoOption<"greedy">,
-  items: Rectangle[]
-): GreedySelection<Rectangle> {
-  switch (option) {
-    case "longest":
-      return new LongestSideFirst(items);
-    case "largest":
-      return new LargestAreaFirst(items);
-    default: {
-      const _exhaustive: never = option;
-      throw new Error(`Unknown greedy option: ${_exhaustive}`);
-    }
-  }
-}
-
+// Local Search Neighborhood handler
 export function createLocalSearchNeighborhood(
-  option: AlgoOption<"local">,
+  option: LocalOptionType,
 ) {
   switch (option) {
-    case "geometry":
-    case "rule":
-    case "overlap":
+    case LocalOption.GEOMETRY:
+    case LocalOption.RULE:
+    case LocalOption.OVERLAP:
     default:
   }
 }

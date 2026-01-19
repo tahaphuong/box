@@ -1,7 +1,7 @@
 import { Rectangle } from ".";
 
 export class Instance {
-  L: number;
+  readonly L: number;
   rectangles: Rectangle[];
 
   constructor(L: number, rectangles: Rectangle[]) {

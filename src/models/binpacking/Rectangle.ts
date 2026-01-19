@@ -47,11 +47,6 @@ export class Rectangle {
     this.rotated = !this.rotated;
     this.isSideway = !this.isSideway;
   }
-  setCoords(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-    return this;
-  }
   setBoxId(boxId: number) {
     this.boxId = boxId;
     return this; // Method chaining?

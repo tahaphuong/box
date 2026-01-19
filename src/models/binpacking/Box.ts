@@ -1,8 +1,8 @@
 import { Rectangle } from ".";
 
 export class Box {
-  id: number;
-  L: number;
+  readonly id: number;
+  readonly L: number;
   rectangles: Rectangle[]; // list rectangles in this box
 
   constructor(id: number, L: number) {
@@ -14,6 +14,5 @@ export class Box {
   addRectangle(rect: Rectangle): void {
     this.rectangles.push(rect)
   }
-
 
 }

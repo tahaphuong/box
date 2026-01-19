@@ -8,7 +8,7 @@ export class GreedyAlgo<Item, SOL extends AlgoSolution> implements AlgoInterface
   solution: SOL; // the main solution
 
   constructor(emptySolution: SOL, selection: GreedySelection<Item>, placement: GreedyPlacement<Item, SOL>) {
-    this.solution = emptySolution; // Init empty solution here
+    this.solution = emptySolution;
     this.selection = selection;
     this.placement = placement;
   }

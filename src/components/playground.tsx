@@ -4,7 +4,7 @@ import { MainContext } from "@/App"
 export function Playground() {
   const { solution } = useContext(MainContext) ?? { solution: null };
 
-  const DISPLAY_SIZE = 200; // Fixed display size
+  const DISPLAY_SIZE = 180; // Fixed display size
   const scale = solution ? DISPLAY_SIZE / solution.L : 1;
 
   if (!solution) {
@@ -21,7 +21,7 @@ export function Playground() {
       <div className="text-xl font-bold text-gray-800 mb-3">3. Playground</div>
       <div className="text-center mb-4">Number of boxes: {solution.boxes.length}</div>
 
-      <div className="flex flex-wrap gap-2 md:gap-6">
+      <div className="flex flex-wrap gap-1 md:gap-2">
         {solution.boxes.map((box) => (
           <div key={box.id} className="border-2 border-gray-400 bg-white w-[calc(33.333%-0.5rem)] md:w-[calc(25%-0.5rem)]">
             <svg
@@ -36,7 +36,7 @@ export function Playground() {
                   y={rect.y * scale}
                   width={rect.getWidth * scale}
                   height={rect.getHeight * scale}
-                  fill={rect.isSideway ? "#8b7f73" : "#f5f5dc"}
+                  fill={rect.isSideway ? "#8b7f73" : "#c4a17c"}
                   stroke="black"
                   strokeWidth="1"
                 />
