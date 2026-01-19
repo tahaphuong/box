@@ -1,16 +1,14 @@
 import { Box, Rectangle } from "@/models/binpacking";
-import { AlgoSolution, type AlgoConfig } from "@/models";
+import { AlgoSolution } from "@/models";
 
 
 export class Solution extends AlgoSolution {
-  readonly algoConfig: AlgoConfig;
   readonly L: number;
   boxes: Box[];
   rectToBox: Map<number, number>; // an id-to-id dictionary
 
-  constructor(algoConfig: AlgoConfig, L: number) {
+  constructor(L: number) {
     super();
-    this.algoConfig = algoConfig;
     this.L = L;
     this.boxes = [];
     this.rectToBox = new Map();
@@ -26,13 +24,5 @@ export class Solution extends AlgoSolution {
     rect.setBoxId(box.id)
     box.addRectangle(rect)
     this.rectToBox.set(rect.id, box.id)
-  }
-
-  getWastedArea(): number {
-    let area = 0;
-    for (const box of this.boxes) {
-      area += box.areaLeft;
-    }
-    return area;
   }
 }

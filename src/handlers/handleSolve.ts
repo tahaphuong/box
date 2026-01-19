@@ -10,13 +10,13 @@ export function handleSolveBinPacking(config: AlgoConfig, instance: Instance): S
     case Algo.GREEDY:
       const selection = createGreedySelection(config.option, instance.rectangles);
       const placement = new ShelfFirstFit();
-      const solution = new Solution(config, instance.L);
+      const solution = new Solution(instance.L);
       const algo = new GreedyAlgo(solution, selection, placement)
       return algo.solve();
 
     case Algo.LOCAL:
     default:
-      return new Solution(config, instance.L);
+      return new Solution(instance.L);
   }
 
 }
