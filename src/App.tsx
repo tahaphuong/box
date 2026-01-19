@@ -24,16 +24,16 @@ function App() {
       <div className='h-full text-left'>
         <div className='text-4xl font-bold mt-4 mb-4'>2D Bin Packing solver</div>
         <div className='mb-2'>Given a set of rectangles and a fixed box size, place all rectangles without overlap into the smallest possible number of square boxes. Rectangles may be rotated and must fit entirely within a box. This problem can be solved with <strong>local search</strong> methods with different neighborhoods or <strong>greedy heuristics</strong>.</div>
-        <div className='mb-2'>The placement strategy for Greedy here is <strong>Shelf Best Height Fit</strong>.</div>
+        <div className='mb-2'>The placement strategy for Greedy here is <strong>Shelf First Fit</strong>.</div>
         <div className="font-normal text-sm text-gray-400">(The latest instance, including its generation settings and results, is saved in local storage)</div>
 
         {/** 3 components, Input, Current Instance settings, and Playground */}
-        <div className='grid grid-cols-12 gap-3 mt-4'>
-          <div className='col-span-3 flex flex-col gap-3'>
+        <div className='grid grid-cols-1 md:grid-cols-12 gap-3 mt-4'>
+          <div className='col-span-1 md:col-span-3 flex flex-col gap-3'>
             <ParamInput/>
             <CurrentInstance/>
           </div>
-          <div className='col-span-9'><Playground/></div>
+          <div className='col-span-1 md:col-span-9'><Playground/></div>
 
         </div>
       </div>

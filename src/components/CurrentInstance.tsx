@@ -139,7 +139,7 @@ export function CurrentInstance() {
           {/* Algorithm options selector */}
           {(Object.entries(ALGOS) as Array<[Algo, typeof ALGOS[Algo]]>).map(([key, val]) => (
             algo === key && (
-              <div key={key} className="flex justify-between align-middle">
+              <div key={key} className="flex justify-start gap-2 align-middle">
                 <Label className="font-medium">
                   {val.optionLabel + ":"}
                 </Label>

@@ -21,13 +21,12 @@ export function Playground() {
       <div className="text-xl font-bold text-gray-800 mb-3">3. Playground</div>
       <div className="text-center mb-4">Number of boxes: {solution.boxes.length}</div>
 
-      <div className="flex flex-wrap gap-6">
+      <div className="flex flex-wrap gap-2 md:gap-6">
         {solution.boxes.map((box) => (
-          <div key={box.id} className="border-2 border-gray-400 bg-white">
+          <div key={box.id} className="border-2 border-gray-400 bg-white w-[calc(33.333%-0.5rem)] md:w-[calc(25%-0.5rem)]">
             <svg
-              width={DISPLAY_SIZE}
-              height={DISPLAY_SIZE}
-              className="border border-gray-300 bg-gray-100"
+              viewBox="0 0 200 200"
+              className="border border-gray-300 bg-gray-100 w-full h-auto"
             >
               {/* Draw rectangles */}
               {box.rectangles.map((rect, idx) => (
