@@ -6,8 +6,8 @@ export function generateInstance(config: GeneratorConfig): Instance {
   const rectangles: Rectangle[] = [];
 
   for (let i = 0; i < numRect; i++) {
-    const randomWidth = Math.ceil(Math.random() * (maxW - minW + 1) + minW);
-    const randomLength = Math.ceil(Math.random() * (maxH - minH + 1) + minH);
+    const randomWidth = Math.ceil(Math.random() * (maxW - minW) + minW);
+    const randomLength = Math.ceil(Math.random() * (maxH - minH) + minH);
     rectangles.push(new Rectangle(i, randomWidth, randomLength));
   }
 

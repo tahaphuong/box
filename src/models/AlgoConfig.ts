@@ -6,13 +6,20 @@ export const Algo = {
 export const GreedyOption = {
   LONGEST: "longest",
   LARGEST: "largest",
-};
+} as const;
+
+export const PlacementOption = {
+  SHELF_FIRST_FIT: "SFF",
+  SHELF_BEST_WIDTH_FIT: "SBWF",
+  SHELF_BEST_HEIGHT_FIT: "SBHF",
+  SHELF_BEST_AREA_FIT: "SBAF",
+} as const;
 
 export const LocalOption = {
   GEOMETRY: "geometry",
   RULE: "rule",
   OVERLAP: "overlap",
-};
+} as const;
 
 export const ALGOS = {
   [Algo.GREEDY]: {
@@ -36,12 +43,9 @@ export const ALGOS = {
 
 
 export type AlgoType = typeof Algo[keyof typeof Algo];
+export type PlacementOptionType = typeof PlacementOption[keyof typeof PlacementOption];
 export type GreedyOptionType = typeof GreedyOption[keyof typeof GreedyOption];
 export type LocalOptionType = typeof LocalOption[keyof typeof LocalOption];
-export type AlgoConfig =
-  | { algo: typeof Algo.GREEDY; option: GreedyOptionType }
-  | { algo: typeof Algo.LOCAL; option: LocalOptionType };
-
 
 // Local Search Neighborhood handler
 export function createLocalSearchNeighborhood(

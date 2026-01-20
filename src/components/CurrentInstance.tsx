@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/popover"
 import { ArrowRight, Check, ChevronsUpDown, Loader2 } from "lucide-react"
 import { MainContext } from "@/App"
-import type { AlgoType, GreedyOptionType, LocalOptionType } from "@/models"
+import type { AlgoType } from "@/models"
 import { ALGOS, Algo, GreedyOption } from "@/models"
 import { type Rectangle, Instance } from "@/models/binpacking"
 import { handleSolveBinPacking } from "@/handlers"
@@ -78,7 +78,7 @@ const PopOverOptions = ({algoData, option, onSelectOption}: {
 
 export function CurrentInstance() {
   const [algo, setAlgo] = useState<AlgoType>(Algo.GREEDY)
-  const [option, setOption] = useState<GreedyOptionType | LocalOptionType>(GreedyOption.LONGEST)
+  const [option, setOption] = useState<string>(GreedyOption.LONGEST)
   const [openOption, setOpenOption] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const { instance, setSolution } = useContext(MainContext) ?? { instance: null };
@@ -95,7 +95,7 @@ export function CurrentInstance() {
   };
 
   const onSelectOption = (value: string): void => {
-    setOption(value as GreedyOptionType | LocalOptionType)
+    setOption(value)
     setOpenOption(false)
   };
 
@@ -106,7 +106,7 @@ export function CurrentInstance() {
     setIsLoading(true);
     setTimeout(() => {
       setSolution(null);
-      const sol = handleSolveBinPacking({ algo, option }, instance);
+      const sol = handleSolveBinPacking(algo, option, instance);
       setSolution(sol);
       setIsLoading(false);
     }, 0);
@@ -153,7 +153,7 @@ export function CurrentInstance() {
                       aria-expanded={openOption}
                       className="w-40 justify-between mt-2"
                     >
-                      {val.options[option]}
+                      {val.options[option as keyof typeof val.options]}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>

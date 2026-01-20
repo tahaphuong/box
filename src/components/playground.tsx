@@ -44,7 +44,7 @@ export function Playground() {
                 />
               ))}
             </svg>
-            <div className="text-sm text-gray-600">Box {box.id} ({(box.getFillPercentage() * 100).toFixed(2)}%)</div>
+            <div className="text-sm text-gray-600">Box {box.id} ({(box.fillRatio * 100).toFixed(2)}%)</div>
           </div>
         ))}
       </div>

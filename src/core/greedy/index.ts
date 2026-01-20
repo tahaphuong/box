@@ -1,7 +1,3 @@
 export { GreedyAlgo } from "./GreedyAlgo";
-export {
-  GreedySelection,
-  LargestAreaFirst,
-  LongestSideFirst,
-  createGreedySelection } from "./GreedySelection";
-export { ShelfFirstFit, type GreedyPlacement } from "./GreedyPlacement";
+export { GreedySelection, createGreedySelection } from "./GreedySelection";
+export { type GreedyPlacement, createGreedyPlacement } from "./GreedyPlacement";
