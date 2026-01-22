@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/popover"
 import { ArrowRight, Check, ChevronsUpDown, Loader2 } from "lucide-react"
 import { MainContext } from "@/App"
-import type { AlgoType } from "@/models"
-import { ALGOS, Algo, GreedyOption } from "@/models"
+import { Algo, SelectionOption, NeighborhoodOption, PlacementOption } from "@/models"
 import { type Rectangle, Instance } from "@/models/binpacking"
 import { handleSolveBinPacking } from "@/handlers"
 
@@ -49,18 +48,18 @@ const TableRectangles = ({ isScrollable, instance }: { isScrollable: boolean; in
     </div>);
 };
 
-const PopOverOptions = ({algoData, option, onSelectOption}: {
-  algoData: typeof ALGOS[typeof Algo.GREEDY | typeof Algo.LOCAL]; option: string | null; onSelectOption: (value: string) => void;}) => {
+const PopOverOptions = ({options, option, onSelectOption}: {
+  options: Record<string, string>; option: string | null; onSelectOption: (value: string) => void;}) => {
   return (
     <PopoverContent className="w-45 p-0">
       <Command>
         <CommandEmpty>No options found.</CommandEmpty>
         <CommandList>
           <CommandGroup>
-            {Object.entries(algoData.options).map(([key, label]) => (
+            {Object.entries(options).map(([key, label]) => (
               <CommandItem
                 key={key}
-                value={key}
+                value={label}
                 onSelect={onSelectOption}
               >
                 <Check
@@ -77,19 +76,22 @@ const PopOverOptions = ({algoData, option, onSelectOption}: {
 };
 
 export function CurrentInstance() {
-  const [algo, setAlgo] = useState<AlgoType>(Algo.GREEDY)
-  const [option, setOption] = useState<string>(GreedyOption.LONGEST)
+  const [algo, setAlgo] = useState<string>(Algo.GREEDY)
+  const [option, setOption] = useState<string>(SelectionOption.LONGEST)
   const [openOption, setOpenOption] = useState<boolean>(false)
+
+  const [openPlacement, setOpenPlacement] = useState<boolean>(false)
+  const [placement, setPlacement] = useState<string>(PlacementOption.SHELF_FIRST_FIT)
+
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const { instance, setSolution } = useContext(MainContext) ?? { instance: null };
 
   const isScrollable: boolean = !instance ? false : instance.rectangles.length > 3
 
   const onSelectAlgo = (value: string): void => {
-    const algoKey = value as AlgoType;
-    const firstOption = Object.keys(ALGOS[algoKey].options)[0];
+    const firstOption = (value === Algo.GREEDY ? Object.values(SelectionOption) : Object.values(NeighborhoodOption))[0];
 
-    setAlgo(algoKey);
+    setAlgo(value);
     setOption(firstOption);
     setOpenOption(false);
   };
@@ -99,6 +101,11 @@ export function CurrentInstance() {
     setOpenOption(false)
   };
 
+  const onSelectPlacementOption = (value: string): void => {
+    setPlacement(value)
+    setOpenPlacement(false)
+  };
+
   const onClickSolve = (): void => {
     if (!instance || !setSolution) {
       return
@@ -106,7 +113,7 @@ export function CurrentInstance() {
     setIsLoading(true);
     setTimeout(() => {
       setSolution(null);
-      const sol = handleSolveBinPacking(algo, option, instance);
+      const sol = handleSolveBinPacking(algo, option, instance, placement);
       setSolution(sol);
       setIsLoading(false);
     }, 0);
@@ -127,10 +134,10 @@ export function CurrentInstance() {
           {/* Choose algorithm: greedy or local search */}
           <RadioGroup className="flex justify-items-start mt-2" value={algo} onValueChange={onSelectAlgo}>
             <Label className="font-medium">Algorithm:</Label>
-            {(Object.entries(ALGOS) as Array<[AlgoType, typeof ALGOS[keyof typeof ALGOS]]>).map(([key, val]) => (
+            {Object.entries(Algo).map(([key, label]) => (
               <div key={key} className="flex items-center space-x-2">
-                <RadioGroupItem value={key} id={key} />
-                <Label htmlFor={key} className="font-normal text-sm">{val.label}</Label>
+                <RadioGroupItem value={label} id={key} />
+                <Label htmlFor={key} className="font-normal text-sm">{label}</Label>
               </div>
             ))}
 
@@ -139,31 +146,66 @@ export function CurrentInstance() {
           </RadioGroup>
 
           {/* Algorithm options selector */}
-          {(Object.entries(ALGOS) as Array<[AlgoType, typeof ALGOS[keyof typeof ALGOS]]>).map(([key, val]) => (
-            algo === key && (
-              <div key={key} className="flex justify-start gap-2 align-middle">
-                <Label className="font-medium">
-                  {val.optionLabel + ":"}
-                </Label>
-                <Popover open={openOption} onOpenChange={setOpenOption}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      role="combobox"
-                      aria-expanded={openOption}
-                      className="w-40 justify-between mt-2"
-                    >
-                      {val.options[option as keyof typeof val.options]}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopOverOptions algoData={val} option={option} onSelectOption={onSelectOption}
-                  />
-                </Popover>
-              </div>
-            )
-          ))}
+          {algo === Algo.GREEDY && (
+            <div className="flex justify-start gap-2 align-middle">
+              <Label className="font-medium">Selection:</Label>
+              <Popover open={openOption} onOpenChange={setOpenOption}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    role="combobox"
+                    aria-expanded={openOption}
+                    className="w-35 justify-between mt-2"
+                  >
+                    {option}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopOverOptions options={SelectionOption} option={option} onSelectOption={onSelectOption}
+                />
+              </Popover>
+            </div>
+          )}
 
+          {algo === Algo.LOCAL && (
+            <div className="flex justify-start gap-2 align-middle">
+              <Label className="font-medium">Neighborhood:</Label>
+              <Popover open={openOption} onOpenChange={setOpenOption}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    role="combobox"
+                    aria-expanded={openOption}
+                    className="w-35 justify-between mt-2"
+                  >
+                    {option}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopOverOptions options={NeighborhoodOption} option={option} onSelectOption={onSelectOption}
+                />
+              </Popover>
+            </div>
+          )}
+
+          {/** Choose placement routine */}
+          <div className="flex justify-start gap-2 align-middle">
+              <Label className="font-medium">Placement:</Label>
+              <Popover open={openPlacement} onOpenChange={setOpenPlacement}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="secondary"
+                  role="combobox"
+                  aria-expanded={openPlacement}
+                  className="w-20 justify-between mt-2"
+                >
+                  {placement}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopOverOptions options={PlacementOption} option={placement} onSelectOption={onSelectPlacementOption}/>
+            </Popover>
+          </div>
 
           <Button className={`mt-2 ${isLoading ? "opacity-50" : "opacity-100"}`} variant='default' onClick={onClickSolve} disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4" /> : <ArrowRight className="ml-2 h-4 w-4" />}

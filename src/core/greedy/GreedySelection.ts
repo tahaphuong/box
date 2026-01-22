@@ -1,4 +1,4 @@
-import { GreedyOption, type GreedyOptionType } from "@/models";
+import { SelectionOption, type SelectionOptionType } from "@/models";
 import type { Rectangle } from "@/models/binpacking";
 
 export abstract class GreedySelection<Item> {
@@ -41,13 +41,13 @@ export class LongestSideFirst extends GreedySelection<Rectangle> {
 
 // Greedy Selection handler
 export function createGreedySelection(
-  option: GreedyOptionType = GreedyOption.LONGEST,
+  option: SelectionOptionType = SelectionOption.LONGEST,
   items: Rectangle[]
 ): GreedySelection<Rectangle> {
   switch (option) {
-    case GreedyOption.LONGEST:
+    case SelectionOption.LONGEST:
       return new LongestSideFirst(items);
-    case GreedyOption.LARGEST:
+    case SelectionOption.LARGEST:
       return new LargestAreaFirst(items);
     default: {
       throw new Error(`Unknown greedy option: ${option}`);

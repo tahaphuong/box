@@ -1,11 +1,11 @@
 export const Algo = {
-  GREEDY: "greedy",
-  LOCAL: "local",
+  GREEDY: "Greedy",
+  LOCAL: "Local Search",
 } as const;
 
-export const GreedyOption = {
-  LONGEST: "longest",
-  LARGEST: "largest",
+export const SelectionOption = {
+  LONGEST: "Longest side",
+  LARGEST: "Largest area",
 } as const;
 
 export const PlacementOption = {
@@ -15,46 +15,25 @@ export const PlacementOption = {
   SHELF_BEST_AREA_FIT: "SBAF",
 } as const;
 
-export const LocalOption = {
-  GEOMETRY: "geometry",
-  RULE: "rule",
-  OVERLAP: "overlap",
+export const NeighborhoodOption = {
+  GEOMETRY: "Geometry",
+  RULE: "Rule-based",
+  OVERLAP: "Overlap",
 } as const;
-
-export const ALGOS = {
-  [Algo.GREEDY]: {
-    label: "Greedy",
-    optionLabel: "Selection strategy",
-    options: {
-      [GreedyOption.LONGEST]: "Longest side",
-      [GreedyOption.LARGEST]: "Largest area",
-    },
-  },
-  [Algo.LOCAL]: {
-    label: "Local Search",
-    optionLabel: "Neighborhood",
-    options: {
-      [LocalOption.GEOMETRY]: "Geometry-based",
-      [LocalOption.RULE]: "Rule-based",
-      [LocalOption.OVERLAP]: "Overlap",
-    },
-  },
-} as const;
-
 
 export type AlgoType = typeof Algo[keyof typeof Algo];
 export type PlacementOptionType = typeof PlacementOption[keyof typeof PlacementOption];
-export type GreedyOptionType = typeof GreedyOption[keyof typeof GreedyOption];
-export type LocalOptionType = typeof LocalOption[keyof typeof LocalOption];
+export type SelectionOptionType = typeof SelectionOption[keyof typeof SelectionOption];
+export type NeighborhoodOptionType = typeof NeighborhoodOption[keyof typeof NeighborhoodOption];
 
 // Local Search Neighborhood handler
 export function createLocalSearchNeighborhood(
-  option: LocalOptionType,
+  option: NeighborhoodOptionType,
 ) {
   switch (option) {
-    case LocalOption.GEOMETRY:
-    case LocalOption.RULE:
-    case LocalOption.OVERLAP:
+    case NeighborhoodOption.GEOMETRY:
+    case NeighborhoodOption.RULE:
+    case NeighborhoodOption.OVERLAP:
     default:
   }
 }

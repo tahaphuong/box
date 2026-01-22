@@ -121,11 +121,16 @@ class ShelfBestAreaFit extends ShelfFirstFit {
   }
   checkThenAdd(item: Rectangle, solution: Solution): boolean {
 
+    this.leastWastedBoxHeight = -1;
+    this.leastWastedShelfValue = -1;
+
+    this.bestBox = null;
+    this.bestShelf = null;
+
     try {
       // loop through each of current box
 
       for (const box of solution.boxes) {
-
         // skip to next box if there is no area left for new item
         if (box.areaLeft <= item.area) continue
         // get the shelves of this box
@@ -143,13 +148,12 @@ class ShelfBestAreaFit extends ShelfFirstFit {
         }
 
         // if there is no perfect shelf -> find perfect box
-        if (!this.bestShelf) {
+        if (!this.bestShelf && !this.bestBox) {
           if (!item.isSideway) item.setRotate();
           const lastShelf = shelves[shelves.length - 1];
           const wastedHeight = solution.L - (lastShelf.y + lastShelf.height + item.getHeight);
           if (wastedHeight < 0) continue;
-
-          if (this.leastWastedBoxHeight < 1 || wastedHeight < this.leastWastedBoxHeight) {
+          if (this.leastWastedBoxHeight < 0 || wastedHeight < this.leastWastedBoxHeight) {
             this.bestBox = box;
           }
         }
@@ -158,16 +162,12 @@ class ShelfBestAreaFit extends ShelfFirstFit {
       if (this.bestShelf && this.bestBox) {
         if (this.tryAddItemToShelf(this.bestShelf, item, this.bestBox, solution)) return true;
       } else if (this.bestBox) {
-        console.log("pong");
-        const sh = this.createNewShelfAndAddItem(this.leastWastedBoxHeight - item.getHeight, item);
         const shelves = this.boxToShelf.get(this.bestBox.id);
-        if (shelves) {
-          shelves.push(sh);
-          return true
-        }
+        if (!shelves) throw new Error("Invalid box id");
+        if (this.tryAddShelfToBox(shelves, item, this.bestBox, solution)) return true;
       }
 
-      // ... lse, we have to add a new box and a new shelf to that
+      // ... else, we have to add a new box and a new shelf to that
       return this.createNewBoxAndAddShelf(item, solution);
     } catch (error) {
       console.error(error)
