@@ -1,10 +1,10 @@
 import type { Rectangle } from "@/models/binpacking";
 
 export class Shelf {
-    readonly y: number; // position of shelf in box
-    readonly height: number;
     readonly width: number;
 
+    y: number; // position of shelf in box
+    height: number;
     currentWidth: number;
     rectangles: Rectangle[];
     // skyline space (height, width)
@@ -55,12 +55,19 @@ export class Shelf {
 
     remove(rect: Rectangle): boolean {
         const index = this.rectangles.indexOf(rect);
-        if (index !== -1) {
-            this.rectangles.splice(index, 1);
-            this.currentWidth -= rect.getWidth;
-            return true;
+        if (index === -1) return false;
+
+        this.rectangles.splice(index, 1);
+        // update width & height
+        this.currentWidth -= rect.getWidth;
+        if (this.height <= rect.getHeight) {
+            let curHeight = 0;
+            for (const r of this.rectangles) {
+                if (r.getHeight > curHeight) curHeight = r.getHeight;
+            }
+            this.height = curHeight;
         }
-        return false;
+        return true;
     }
 }
 // TODO: Needs fix

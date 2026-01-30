@@ -3,20 +3,19 @@ import type { ObjectiveFunction } from "./Objective";
 import { Solution, Rectangle, Box } from "@/models/binpacking";
 
 export abstract class Move<SOL> {
-    abstract apply(solution: SOL): SOL;
+    abstract apply(solution: SOL): boolean;
 
-    abstract undo(solution: SOL): SOL;
+    abstract undo(solution: SOL): boolean;
 
     // Evaluate the score of the move: apply then undo
     getScore(objective: ObjectiveFunction<SOL>, solution: SOL): number | null {
-        try {
-            const score = objective.score(this.apply(solution));
-            this.undo(solution);
-            return score;
-        } catch (error) {
-            console.error(error);
+        const applied = this.apply(solution);
+        if (!applied) {
             return null;
         }
+        const score = objective.score(solution);
+        this.undo(solution);
+        return score;
     }
 }
 
@@ -37,7 +36,7 @@ function getBoxInfo(
 }
 
 // from original to new box
-export class RelocateShelfRect extends Move<Solution> {
+export class RelocateRectShelf extends Move<Solution> {
     rect: Rectangle;
     originalBoxId: number;
     newBoxId: number;
@@ -48,13 +47,12 @@ export class RelocateShelfRect extends Move<Solution> {
 
     constructor(
         rect: Rectangle,
-        originalBoxId: number,
         newBoxId: number,
         currentPlacement: ShelfPlacement,
     ) {
         super();
         this.rect = rect;
-        this.originalBoxId = originalBoxId;
+        this.originalBoxId = rect.boxId;
         this.newBoxId = newBoxId;
         this.currentPlacement = currentPlacement;
 
@@ -62,11 +60,11 @@ export class RelocateShelfRect extends Move<Solution> {
         this.newShelf = null;
     }
 
-    apply(solution: Solution): Solution {
+    apply(solution: Solution): boolean {
         // remove from current box
         const [currentBox, currentShelves] = getBoxInfo(
             solution,
-            this.originalBoxId,
+            this.rect.boxId,
             this.currentPlacement,
         );
         let removed = false;
@@ -74,13 +72,12 @@ export class RelocateShelfRect extends Move<Solution> {
             removed = shelf.remove(this.rect);
             if (removed) {
                 this.originalShelf = shelf;
-                currentBox.removeRectangle(this.rect);
+                solution.removeRectangle(this.rect, currentBox);
                 break;
             }
         }
-        if (!removed) {
-            throw new Error(`Rectangle ${this.rect.id} not found in shelf`);
-        }
+        if (!removed) return false;
+        // throw new Error(`Rectangle ${this.rect.id} not found in shelf`);
 
         // add to new box
         const [newBox, newShelves] = getBoxInfo(
@@ -88,47 +85,45 @@ export class RelocateShelfRect extends Move<Solution> {
             this.newBoxId,
             this.currentPlacement,
         );
-        let added = false;
+        const added = this.currentPlacement.checkThenAddToBox(
+            this.rect,
+            solution,
+            newBox,
+        );
+        if (!added) return false;
+        // throw new Error(`Rectangle ${this.rect.id} can not be added to box ${newBox.id}`);
+
         for (const shelf of newShelves) {
-            added = this.currentPlacement.tryAddItemToShelf(
-                shelf,
-                this.rect,
-                newBox,
-                solution,
-            );
-            if (added) {
+            if (shelf.rectangles.includes(this.rect)) {
                 this.newShelf = shelf;
-                newBox.addRectangle(this.rect);
                 break;
             }
         }
-        if (!added) {
-            throw new Error(
-                `Rectangle ${this.rect.id} can not be added to box ${newBox.id}`,
-            );
-        }
 
-        return solution;
+        return true;
     }
 
-    undo(solution: Solution): Solution {
+    undo(solution: Solution): boolean {
         if (!this.originalShelf || !this.newShelf) {
-            throw new Error("Move not yet applied (so can not undo)");
+            // throw new Error("Move not yet applied (so can not undo)");
+            return false;
         }
-        this.originalShelf.add(this.rect);
-        this.newShelf.remove(this.rect);
         const [originalBox] = getBoxInfo(
             solution,
             this.originalBoxId,
             this.currentPlacement,
         );
-        originalBox.addRectangle(this.rect);
         const [newBox] = getBoxInfo(
             solution,
             this.newBoxId,
             this.currentPlacement,
         );
-        newBox.removeRectangle(this.rect);
-        return solution;
+        this.newShelf.remove(this.rect);
+        solution.removeRectangle(this.rect, newBox);
+
+        this.originalShelf.add(this.rect);
+        solution.addRectangle(this.rect, originalBox);
+
+        return true;
     }
 }

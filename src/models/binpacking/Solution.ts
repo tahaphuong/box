@@ -20,10 +20,23 @@ export class Solution extends AlgoSolution {
         this.idToBox.set(box.id, box);
         return box;
     }
+    // remove rectangle as well
+    removeBox(box: Box): void {
+        this.idToBox.delete(box.id);
+        box.rectangles.forEach((rect) => {
+            rect.setBoxId(-1);
+            this.rectToBox.delete(rect.id);
+        });
+    }
 
     addRectangle(rect: Rectangle, box: Box): void {
         rect.setBoxId(box.id);
         box.addRectangle(rect);
         this.rectToBox.set(rect.id, box.id);
+    }
+    removeRectangle(rect: Rectangle, box: Box): void {
+        rect.setBoxId(-1);
+        box.removeRectangle(rect);
+        this.rectToBox.delete(rect.id);
     }
 }

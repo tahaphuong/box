@@ -40,6 +40,12 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         solution: Solution,
     ): boolean;
 
+    abstract checkThenAddToBox(
+        item: Rectangle,
+        solution: Solution,
+        box: Box,
+    ): boolean;
+
     abstract checkThenAdd(item: Rectangle, solution: Solution): boolean;
 }
 
@@ -115,29 +121,48 @@ export class ShelfFirstFit extends ShelfPlacement {
         return true;
     }
 
+    // checkThenRemoveFromBox(
+    //     item: Rectangle,
+    //     solution: Solution,
+    //     box: Box,
+    // ): boolean {
+    //     // get the shelves of this box
+    //     const shelves = this.boxToShelf.get(box.id);
+    //     if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+
+    //     for (const sh of shelves) {
+    //         if (sh.remove(item)) return true;
+    //     }
+
+    //     // remove from Box
+    //     solution.removeRectangle(item, box);
+    //     return false;
+    // }
+
+    checkThenAddToBox(item: Rectangle, solution: Solution, box: Box): boolean {
+        if (box.areaLeft <= item.area) return false;
+
+        // get the shelves of this box
+        const shelves = this.boxToShelf.get(box.id);
+        if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+
+        // try to add to an existing shelf
+        for (const sh of shelves) {
+            if (this.tryAddItemToShelf(sh, item, box, solution)) return true;
+        }
+
+        // check if can create a new shelf for this box
+        if (this.tryAddShelfToBox(shelves, item, box, solution)) return true;
+
+        return false;
+    }
+
     checkThenAdd(item: Rectangle, solution: Solution): boolean {
         try {
             // loop through each of current box
             for (const box of solution.idToBox.values()) {
-                // skip to next box if there is no area left for new item
-                if (box.areaLeft <= item.area) continue;
-
-                // get the shelves of this box
-                const shelves = this.boxToShelf.get(box.id);
-                if (!shelves || shelves.length == 0)
-                    throw new Error("Invalid box id");
-
-                // try to add to an existing shelf
-                for (const sh of shelves) {
-                    if (this.tryAddItemToShelf(sh, item, box, solution))
-                        return true;
-                }
-
-                // check if can create a new shelf for this box
-                if (this.tryAddShelfToBox(shelves, item, box, solution))
-                    return true;
+                if (this.checkThenAddToBox(item, solution, box)) return true;
             }
-
             // ... else, we have to add a new box and a new shelf to that
             return this.createNewBoxAndAddShelf(item, solution);
         } catch (error) {
@@ -148,13 +173,16 @@ export class ShelfFirstFit extends ShelfPlacement {
 }
 
 export class ShelfBestAreaFit extends ShelfFirstFit {
-    leastWastedBoxHeight: number;
-    leastWastedShelfValue: number;
-    bestBox: Box | null;
-    bestShelf: Shelf | null;
+    leastWastedBoxHeight: number = -1;
+    leastWastedShelfValue: number = -1;
+    bestBox: Box | null = null;
+    bestShelf: Shelf | null = null;
     constructor() {
         super();
+        this.init();
+    }
 
+    init() {
         this.leastWastedBoxHeight = -1;
         this.leastWastedShelfValue = -1;
         this.bestBox = null;
@@ -178,12 +206,30 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
         }
         return false;
     }
-    checkThenAdd(item: Rectangle, solution: Solution): boolean {
-        this.leastWastedBoxHeight = -1;
-        this.leastWastedShelfValue = -1;
 
-        this.bestBox = null;
-        this.bestShelf = null;
+    checkThenAddToABox(item: Rectangle, solution: Solution, box: Box): boolean {
+        this.init();
+
+        if (box.areaLeft <= item.area) return false;
+        // get the shelves of this box
+        const shelves = this.boxToShelf.get(box.id);
+        if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+        for (const sh of shelves) {
+            this.calculateWastedShelfValue(sh, item, box);
+            item.setRotate();
+            if (!this.calculateWastedShelfValue(sh, item, box))
+                item.setRotate();
+        }
+        if (this.bestShelf) {
+            if (this.tryAddItemToShelf(this.bestShelf, item, box, solution))
+                return true;
+        }
+        if (this.tryAddShelfToBox(shelves, item, box, solution)) return true;
+        return false;
+    }
+
+    checkThenAdd(item: Rectangle, solution: Solution): boolean {
+        this.init();
 
         try {
             // loop through each of current box
