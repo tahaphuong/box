@@ -1,28 +1,29 @@
 import { Box, Rectangle } from "@/models/binpacking";
 import { AlgoSolution } from "@/models";
 
-
 export class Solution extends AlgoSolution {
-  readonly L: number;
-  boxes: Box[];
-  rectToBox: Map<number, number>; // an id-to-id dictionary
+    readonly L: number;
+    rectToBox: Map<number, number>; // an id-to-id dictionary
+    idToBox: Map<number, Box>; // an id-to-Box dictionary
+    incId: number;
 
-  constructor(L: number) {
-    super();
-    this.L = L;
-    this.boxes = [];
-    this.rectToBox = new Map();
-  }
+    constructor(L: number) {
+        super();
+        this.L = L;
+        this.rectToBox = new Map();
+        this.idToBox = new Map();
+        this.incId = 0;
+    }
 
-  addNewBox(): Box {
-    const box = new Box(this.boxes.length, this.L)
-    this.boxes.push(box);
-    return box;
-  }
+    addNewBox(): Box {
+        const box = new Box(this.incId++, this.L);
+        this.idToBox.set(box.id, box);
+        return box;
+    }
 
-  addRectangle(rect: Rectangle, box: Box): void {
-    rect.setBoxId(box.id)
-    box.addRectangle(rect)
-    this.rectToBox.set(rect.id, box.id)
-  }
+    addRectangle(rect: Rectangle, box: Box): void {
+        rect.setBoxId(box.id);
+        box.addRectangle(rect);
+        this.rectToBox.set(rect.id, box.id);
+    }
 }
