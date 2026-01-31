@@ -28,6 +28,8 @@ import { PopoverContent } from "@/components/ui/popover";
 import { parseInputToConfig } from "@/handlers";
 import { MainContext } from "@/context/MainContext";
 import { handleSolveBinPacking } from "@/handlers";
+import type { Instance } from "@/models/binpacking";
+import { generateInstance } from "@/handlers/generateInstance";
 
 export function ParamInput() {
     const [L, setL] = useState<string>("200");
@@ -35,71 +37,73 @@ export function ParamInput() {
     const [widthRange, setWidthRange] = useState<string>("20-200");
     const [heightRange, setHeightRange] = useState<string>("20-200");
     const [error, setError] = useState<string>("");
+
     const [algo, setAlgo] = useState<string>(Algo.GREEDY);
-    const [option, setOption] = useState<string>(SelectionOption.LONGEST);
+    const [selection, setSelection] = useState<string>(SelectionOption.LONGEST);
     const [placement, setPlacement] = useState<string>(
         PlacementOption.SHELF_FIRST_FIT,
     );
+    const [neighborhood, setNeighborhood] = useState<string>(
+        NeighborhoodOption.GEOMETRY,
+    );
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [openOption, setOpenOption] = useState<boolean>(false);
+    const [isLoadingGen, setIsLoadingGen] = useState<boolean>(false);
+    const [isLoadingSolve, setIsLoadingSolve] = useState<boolean>(false);
+
+    const [openSelection, setOpenSelection] = useState<boolean>(false);
     const [openPlacement, setOpenPlacement] = useState<boolean>(false);
+    const [openNeighborhood, setOpenNeighborhood] = useState<boolean>(false);
 
-    const { setInstance, setSolution } = useContext(MainContext) ?? {
+    const { instance, setInstance, setSolution } = useContext(MainContext) ?? {
+        instance: null,
+        setInstance: null,
         setSolution: null,
     };
 
-    const handleGenerateSolve = () => {
+    const handleGenerate = () => {
         const config = parseInputToConfig(L, numRect, widthRange, heightRange);
+        const newInstance: Instance = generateInstance(config);
+        if (setInstance) setInstance(newInstance);
+    };
 
-        if (setInstance) setInstance(null);
+    const handleSolve = () => {
+        if (!instance) {
+            setError("Please generate an instance first");
+            return;
+        }
+        instance.resetAllRectangles();
         if (setSolution) setSolution(null);
-        const { instance, solution } = handleSolveBinPacking(
-            config,
+        const solution = handleSolveBinPacking(
+            instance,
             algo,
-            option,
+            selection,
+            neighborhood,
             placement,
         );
-        if (setInstance) setInstance(instance);
         if (setSolution) setSolution(solution);
-        setIsLoading(false);
     };
 
-    const onSelectAlgo = (value: string): void => {
-        const firstOption = (
-            value === Algo.GREEDY
-                ? Object.values(SelectionOption)
-                : Object.values(NeighborhoodOption)
-        )[0];
-
-        setAlgo(value);
-        setOption(firstOption);
-        setOpenOption(false);
-    };
-
-    const onSelectOption = (value: string): void => {
-        setOption(value);
-        setOpenOption(false);
-    };
-
-    const onSelectPlacementOption = (value: string): void => {
-        setPlacement(value);
-        setOpenPlacement(false);
-    };
-
-    const onClickGenerateSolve = (): void => {
-        setIsLoading(true);
+    const onClickGenerateSolve = (handleFunc: () => void): void => {
         setError("");
+
+        if (handleFunc === handleGenerate) {
+            setIsLoadingGen(true);
+        } else if (handleFunc === handleSolve) {
+            setIsLoadingSolve(true);
+        }
+
         setTimeout(() => {
             try {
-                handleGenerateSolve();
+                handleFunc();
             } catch (error) {
                 setError(
                     error instanceof Error
                         ? error.message
                         : "An error occurred",
                 );
-                setIsLoading(false);
+            } finally {
+                setIsLoadingGen(false);
+                setIsLoadingSolve(false);
             }
         }, 0);
     };
@@ -182,7 +186,7 @@ export function ParamInput() {
             <RadioGroup
                 className="flex justify-items-start mt-2"
                 value={algo}
-                onValueChange={onSelectAlgo}
+                onValueChange={setAlgo}
             >
                 <Label className="font-medium">Algorithm:</Label>
                 {Object.entries(Algo).map(([key, label]) => (
@@ -200,54 +204,28 @@ export function ParamInput() {
                 ></div>
             </RadioGroup>
 
-            {/* Algorithm options selector */}
-            {algo === Algo.GREEDY && (
-                <div className="flex justify-start gap-2 align-middle">
-                    <Label className="font-medium">Selection:</Label>
-                    <Popover open={openOption} onOpenChange={setOpenOption}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="secondary"
-                                role="combobox"
-                                aria-expanded={openOption}
-                                className="w-35 justify-between mt-2"
-                            >
-                                {option}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopOverOptions
-                            options={SelectionOption}
-                            option={option}
-                            onSelectOption={onSelectOption}
-                        />
-                    </Popover>
-                </div>
-            )}
-
-            {algo === Algo.LOCAL && (
-                <div className="flex justify-start gap-2 align-middle">
-                    <Label className="font-medium">Neighborhood:</Label>
-                    <Popover open={openOption} onOpenChange={setOpenOption}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="secondary"
-                                role="combobox"
-                                aria-expanded={openOption}
-                                className="w-35 justify-between mt-2"
-                            >
-                                {option}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopOverOptions
-                            options={NeighborhoodOption}
-                            option={option}
-                            onSelectOption={onSelectOption}
-                        />
-                    </Popover>
-                </div>
-            )}
+            {/* Choose selection order */}
+            <div className="flex justify-start gap-2 align-middle">
+                <Label className="font-medium">Selection:</Label>
+                <Popover open={openSelection} onOpenChange={setOpenSelection}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="secondary"
+                            role="combobox"
+                            aria-expanded={openSelection}
+                            className="w-35 justify-between mt-2"
+                        >
+                            {selection}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopOverOptions
+                        options={SelectionOption}
+                        option={selection}
+                        onSelectOption={setSelection}
+                    />
+                </Popover>
+            </div>
 
             {/** Choose placement routine */}
             <div className="flex justify-start gap-2 align-middle">
@@ -267,26 +245,72 @@ export function ParamInput() {
                     <PopOverOptions
                         options={PlacementOption}
                         option={placement}
-                        onSelectOption={onSelectPlacementOption}
+                        onSelectOption={setPlacement}
                     />
                 </Popover>
             </div>
 
+            {/** Choose neighborhood */}
+            {algo === Algo.LOCAL && (
+                <div className="flex justify-start gap-2 align-middle">
+                    <Label className="font-medium">Neighborhood:</Label>
+                    <Popover
+                        open={openNeighborhood}
+                        onOpenChange={setOpenNeighborhood}
+                    >
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="secondary"
+                                role="combobox"
+                                aria-expanded={openNeighborhood}
+                                className="w-35 justify-between mt-2"
+                            >
+                                {neighborhood}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopOverOptions
+                            options={NeighborhoodOption}
+                            option={neighborhood}
+                            onSelectOption={setNeighborhood}
+                        />
+                    </Popover>
+                </div>
+            )}
+
+            {/* TODO: Input number neighbors & number iterations */}
+
             {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
 
             <Button
-                className={`mt-2 ${isLoading ? "opacity-50" : "opacity-100"}`}
+                className={`mt-2 ${isLoadingGen ? "opacity-50" : "opacity-100"}`}
                 variant="default"
-                onClick={onClickGenerateSolve}
-                disabled={isLoading}
+                onClick={() => onClickGenerateSolve(handleGenerate)}
+                disabled={isLoadingGen}
             >
-                {isLoading ? (
+                {isLoadingGen ? (
                     <Loader2 className="mr-2 h-4 w-4" />
                 ) : (
                     <ArrowRight className="ml-2 h-4 w-4" />
                 )}
                 <span className="text-sm">
-                    {isLoading ? "Generate and solve..." : "Generate and solve"}
+                    {isLoadingGen ? "Generating..." : "Generate instance"}
+                </span>
+            </Button>
+
+            <Button
+                className={`mt-2 ${isLoadingSolve ? "opacity-50" : "opacity-100"}`}
+                variant="default"
+                onClick={() => onClickGenerateSolve(handleSolve)}
+                disabled={isLoadingSolve}
+            >
+                {isLoadingSolve ? (
+                    <Loader2 className="mr-2 h-4 w-4" />
+                ) : (
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                )}
+                <span className="text-sm">
+                    {isLoadingSolve ? "Solving..." : "Solve"}
                 </span>
             </Button>
         </div>

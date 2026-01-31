@@ -42,35 +42,63 @@ export class Shelf {
         rect.x = this.currentWidth;
         rect.y = this.y;
 
-        // this.skylines.push({
-        //     x: this.currentWidth,
-        //     h: this.getHeightDiff(rect.getHeight),
-        //     w: rect.getWidth,
-        // });
-
         this.currentWidth = this.currentWidth + rect.getWidth;
         this.rectangles.push(rect);
         return true;
     }
 
-    remove(rect: Rectangle): boolean {
-        const index = this.rectangles.indexOf(rect);
-        if (index === -1) return false;
-
-        this.rectangles.splice(index, 1);
-        // update width & height
+    revertAdd(
+        rect: Rectangle,
+        oldX: number,
+        oldY: number,
+        oldRotated: boolean,
+    ): boolean {
         this.currentWidth -= rect.getWidth;
-        if (this.height <= rect.getHeight) {
-            let curHeight = 0;
-            for (const r of this.rectangles) {
-                if (r.getHeight > curHeight) curHeight = r.getHeight;
-            }
-            this.height = curHeight;
+        rect.x = oldX;
+        rect.y = oldY;
+        if (rect.rotated !== oldRotated) {
+            rect.setRotate();
         }
+        this.rectangles.pop();
         return true;
     }
+
+    remove(rect: Rectangle): number {
+        // position in shelf
+        const index = this.rectangles.indexOf(rect);
+        if (index === -1) return -1;
+
+        // remove rect from rectangles array & update current width
+        this.rectangles.splice(index, 1);
+
+        if (this.rectangles.length == 0) {
+            this.currentWidth = 0;
+            this.height = 0;
+            return 0; // has no more rectangles
+        }
+
+        // update shelf currentWidth
+        this.currentWidth -= rect.getWidth;
+
+        // update rectangles x
+        for (let i = index; i < this.rectangles.length; i++) {
+            this.rectangles[i].x -= rect.getWidth;
+        }
+
+        // update shelf height
+        if (this.height == rect.getHeight) {
+            let curBestHeight = 0;
+            for (const r of this.rectangles) {
+                if (r.getHeight > curBestHeight) curBestHeight = r.getHeight;
+            }
+            this.height = curBestHeight;
+        }
+        return index;
+    }
 }
+
 // TODO: Needs fix
+//
 // findSkyline(rect: Rectangle, bestFit: boolean = false): number | null {
 //     let bestIndex = null;
 

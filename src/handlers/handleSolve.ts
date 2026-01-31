@@ -1,57 +1,75 @@
-import { type GeneratorConfig, Instance, Solution } from "@/models/binpacking";
-import type { PlacementOptionType, SelectionOptionType } from "@/models";
+import { Instance, Solution } from "@/models/binpacking";
+import type {
+    PlacementOptionType,
+    SelectionOptionType,
+    NeighborhoodOptionType,
+} from "@/models";
 import { Algo } from "@/models";
 import {
     GreedyAlgo,
-    createGreedyPlacement,
-    createGreedySelection,
+    createPlacementBinPack,
+    createSelectionBinPack,
 } from "@/core/greedy";
-import { generateInstance } from "./generateInstance";
+import {
+    LocalSearchAlgo,
+    createNeighborhoodBinPack,
+    UltilizationBox,
+    maxIterations,
+    HillClimbingStrategy,
+} from "@/core/local_search";
 /**
  * Use Algo here based on user input
  */
 
 export function handleSolveBinPacking(
-    config: GeneratorConfig,
+    instance: Instance,
     algo: string,
-    option: string,
+    selectionOpt: string,
+    neighborhoodOpt: string,
     placementOpt: string,
-): { instance: Instance; solution: Solution } {
-    const instance: Instance = generateInstance(config);
-
+): Solution {
     const start = performance.now();
-    const selection = createGreedySelection(
-        option as SelectionOptionType,
+    const selection = createSelectionBinPack(
+        selectionOpt as SelectionOptionType,
         instance.rectangles,
     );
-    const placement = createGreedyPlacement(
+    const placement = createPlacementBinPack(
         placementOpt as PlacementOptionType,
     );
-    const startSolution = new Solution(instance.L);
-    const result = { instance: instance, solution: startSolution };
+    let solution = new Solution(instance.L);
 
     switch (algo) {
         case Algo.GREEDY: {
-            const algo = new GreedyAlgo(startSolution, selection, placement);
-            result.solution = algo.solve();
+            const algo = new GreedyAlgo(solution, selection, placement);
+            solution = algo.solve();
             break;
         }
         case Algo.LOCAL: {
-            // const greedyAlgo = new GreedyAlgo(
-            //     startSolution,
-            //     selection,
-            //     placement,
-            // );
-            // const greedySolution = greedyAlgo.solve();
-
-            // const algo = new LocalSearchAlgo(greedySolution, placement);
-            // result.solution = algo.solve();
-            break;
+            const greedyAlgo = new GreedyAlgo(solution, selection, placement);
+            const greedySolution = greedyAlgo.solve();
+            const strategy = new HillClimbingStrategy<Solution>();
+            const terminate = maxIterations(100);
+            const neighborhood = createNeighborhoodBinPack(
+                neighborhoodOpt as NeighborhoodOptionType,
+                10,
+            );
+            const objective = new UltilizationBox();
+            // TODO: initiate new ShelfPlacement (SBFA) and copy from greedy to improve current shelf placement
+            const algo = new LocalSearchAlgo(
+                greedySolution,
+                placement,
+                strategy,
+                terminate,
+                neighborhood,
+                objective,
+            );
+            solution = algo.solve();
         }
     }
 
     const runtime = performance.now() - start;
-    result.solution.setRunTime(runtime);
-    console.log(result.solution);
-    return result;
+    solution.setRunTime(runtime);
+
+    console.log(solution); // Debug
+    return solution;
 }

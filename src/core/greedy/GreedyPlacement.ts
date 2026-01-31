@@ -33,7 +33,7 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         item: Rectangle,
         box: Box,
         solution: Solution,
-    ): boolean;
+    ): Shelf | null;
 
     abstract createNewBoxAndAddShelf(
         item: Rectangle,
@@ -44,9 +44,11 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         item: Rectangle,
         solution: Solution,
         box: Box,
-    ): boolean;
+    ): Shelf | null;
 
     abstract checkThenAdd(item: Rectangle, solution: Solution): boolean;
+
+    abstract checkThenRemoveFromPlacement(item: Rectangle, box: Box): boolean;
 }
 
 export class ShelfFirstFit extends ShelfPlacement {
@@ -95,7 +97,7 @@ export class ShelfFirstFit extends ShelfPlacement {
         item: Rectangle,
         box: Box,
         solution: Solution,
-    ): boolean {
+    ): Shelf | null {
         const lastShelf = currentShelves[currentShelves.length - 1];
         if (
             lastShelf.y + lastShelf.height + item.getSmallerSide() <=
@@ -108,9 +110,9 @@ export class ShelfFirstFit extends ShelfPlacement {
             );
             currentShelves.push(sh);
             solution.addRectangle(item, box);
-            return true;
+            return sh;
         }
-        return false;
+        return null;
     }
 
     createNewBoxAndAddShelf(item: Rectangle, solution: Solution): boolean {
@@ -121,26 +123,40 @@ export class ShelfFirstFit extends ShelfPlacement {
         return true;
     }
 
-    // checkThenRemoveFromBox(
-    //     item: Rectangle,
-    //     solution: Solution,
-    //     box: Box,
-    // ): boolean {
-    //     // get the shelves of this box
-    //     const shelves = this.boxToShelf.get(box.id);
-    //     if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+    checkThenRemoveFromPlacement(item: Rectangle, box: Box): boolean {
+        // get the shelves of this box
+        const shelves = this.boxToShelf.get(box.id);
+        if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
 
-    //     for (const sh of shelves) {
-    //         if (sh.remove(item)) return true;
-    //     }
+        let removed = false;
+        for (const sh of shelves) {
+            if (sh.remove(item)) removed = true;
+        }
+        if (!removed) throw new Error("Item not found in any shelf/not in box");
 
-    //     // remove from Box
-    //     solution.removeRectangle(item, box);
-    //     return false;
-    // }
+        // Remove empty shelves from last to first (prevent shifting)
+        for (let i = shelves.length - 1; i >= 0; i--) {
+            if (shelves[i].rectangles.length == 0) {
+                shelves.splice(i, 1);
+            }
+        }
 
-    checkThenAddToBox(item: Rectangle, solution: Solution, box: Box): boolean {
-        if (box.areaLeft <= item.area) return false;
+        // Recalculate y positions
+        let y = 0;
+        for (const shelf of shelves) {
+            shelf.y = y;
+            y += shelf.height;
+        }
+
+        return false;
+    }
+
+    checkThenAddToBox(
+        item: Rectangle,
+        solution: Solution,
+        box: Box,
+    ): Shelf | null {
+        if (box.areaLeft <= item.area) return null;
 
         // get the shelves of this box
         const shelves = this.boxToShelf.get(box.id);
@@ -148,13 +164,12 @@ export class ShelfFirstFit extends ShelfPlacement {
 
         // try to add to an existing shelf
         for (const sh of shelves) {
-            if (this.tryAddItemToShelf(sh, item, box, solution)) return true;
+            if (this.tryAddItemToShelf(sh, item, box, solution)) return sh;
         }
 
         // check if can create a new shelf for this box
-        if (this.tryAddShelfToBox(shelves, item, box, solution)) return true;
-
-        return false;
+        // return Shelf if created, else null
+        return this.tryAddShelfToBox(shelves, item, box, solution);
     }
 
     checkThenAdd(item: Rectangle, solution: Solution): boolean {
@@ -299,7 +314,7 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
 }
 
 // Greedy Selection handler
-export function createGreedyPlacement(
+export function createPlacementBinPack(
     option: PlacementOptionType = PlacementOption.SHELF_FIRST_FIT,
 ): GreedyPlacement<Rectangle, Solution> {
     switch (option) {

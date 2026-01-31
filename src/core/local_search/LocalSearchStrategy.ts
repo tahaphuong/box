@@ -26,7 +26,10 @@ export class HillClimbingStrategy<SOL> implements LocalSearchStrategy<SOL> {
 
         for (const m of moves) {
             const mScore = m.getScore(objective, current);
-            if (mScore != null && mScore > bestMoveScore) {
+            if (
+                mScore != null &&
+                objective.isBetterScore(mScore, bestMoveScore)
+            ) {
                 bestMove = m;
                 bestMoveScore = mScore;
             }

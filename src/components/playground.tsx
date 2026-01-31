@@ -44,18 +44,40 @@ export function Playground() {
                         >
                             {/* Draw rectangles */}
                             {box.rectangles.map((rect, idx) => (
-                                <rect
-                                    key={idx}
-                                    x={rect.x * scale}
-                                    y={rect.y * scale}
-                                    width={rect.getWidth * scale}
-                                    height={rect.getHeight * scale}
-                                    fill={
-                                        rect.isSideway ? "#8b7f73" : "#c4a17c"
-                                    }
-                                    stroke="black"
-                                    strokeWidth="1"
-                                />
+                                <g key={idx}>
+                                    <rect
+                                        x={rect.x * scale}
+                                        y={rect.y * scale}
+                                        width={rect.getWidth * scale}
+                                        height={rect.getHeight * scale}
+                                        fill={
+                                            rect.isSideway
+                                                ? "#8b7f73"
+                                                : "#c4a17c"
+                                        }
+                                        stroke="black"
+                                        strokeWidth="1"
+                                    />
+                                    {/* Display rectangle ID in the center */}
+                                    <text
+                                        x={
+                                            rect.x * scale +
+                                            (rect.getWidth * scale) / 2
+                                        }
+                                        y={
+                                            rect.y * scale +
+                                            (rect.getHeight * scale) / 2
+                                        }
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        fontSize="10"
+                                        fontWeight="light"
+                                        fill="black"
+                                        pointerEvents="none"
+                                    >
+                                        {rect.id}
+                                    </text>
+                                </g>
                             ))}
                         </svg>
                         <div className="text-sm text-gray-600">

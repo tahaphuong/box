@@ -1,9 +1,9 @@
 export { GreedyAlgo } from "./GreedyAlgo";
-export { GreedySelection, createGreedySelection } from "./GreedySelection";
+export { GreedySelection, createSelectionBinPack } from "./GreedySelection";
 export type { Shelf } from "./Shelf";
 export {
     type GreedyPlacement,
-    createGreedyPlacement,
+    createPlacementBinPack,
     ShelfBestAreaFit,
     ShelfFirstFit,
     ShelfPlacement,

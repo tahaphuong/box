@@ -6,7 +6,7 @@ import type {
     Stats,
     LocalSearchStrategy,
 } from ".";
-import type { GreedyPlacement } from "../greedy";
+import type { GreedyPlacement } from "@/core/greedy";
 
 export class LocalSearchAlgo<
     Item,
@@ -19,7 +19,6 @@ export class LocalSearchAlgo<
     private terminate: Termination; // termination criteria based on stats
     private neighborhood: Neighborhood<Item, SOL>; // geometry, permutation or overlap
     private objective: ObjectiveFunction<SOL>; // how to evaluate the solution
-
     constructor(
         initialSolution: SOL,
         currentPlacement: GreedyPlacement<Item, SOL>,
@@ -59,7 +58,7 @@ export class LocalSearchAlgo<
 
             // If found "suitable" move -> apply (new neighbor)
             if (nextMove) {
-                nextMove.apply(this.solution);
+                nextMove.apply(this.solution, true);
             }
             this.strategy.update(nextMove, nextMoveScore, stats);
         }
