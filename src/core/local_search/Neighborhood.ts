@@ -41,6 +41,7 @@ export class GeometryNeighborhood implements Neighborhood<Rectangle, Solution> {
         const moves = [];
 
         // get random rect from random box
+        // TODO: Re-implement clear 1 bin
         //
         const boxes = [...solution.idToBox.values()];
 
@@ -65,18 +66,6 @@ export class GeometryNeighborhood implements Neighborhood<Rectangle, Solution> {
         return moves;
     }
 }
-
-// function getRandomBoxIds(map: Map<number, Box>, count: number): number[] {
-//     const keys = [...map.keys()];
-
-//     // Fisher-Yates Shuffle
-//     for (let i = keys.length - 1; i > 0; i--) {
-//         const j = Math.floor(Math.random() * (i + 1));
-//         [keys[i], keys[j]] = [keys[j], keys[i]];
-//     }
-
-//     return keys.slice(0, count);
-// }
 
 // Local Search Neighborhood handler
 export function createNeighborhoodBinPack(

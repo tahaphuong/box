@@ -15,11 +15,25 @@ export abstract class ShelfPlacement implements GreedyPlacement<
     constructor() {
         this.boxToShelf = new Map();
     }
+
+    getShelvesFromBox(boxId: number): Shelf[] {
+        const currentShelves = this.boxToShelf.get(boxId);
+        if (currentShelves == undefined) throw new Error("Invalid box id");
+        return currentShelves;
+    }
+
     abstract createNewShelfAndAddItem(
         y: number,
         item: Rectangle,
         width: number,
     ): Shelf;
+
+    abstract addItemToNewShelfOfNewBox(item: Rectangle, box: Box): boolean;
+
+    abstract checkItemFitShelf(sh: Shelf, item: Rectangle): boolean;
+
+    // for local search
+    abstract checkItemFitBox(item: Rectangle, box: Box): boolean;
 
     abstract tryAddItemToShelf(
         sh: Shelf,
@@ -28,23 +42,9 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         solution: Solution,
     ): boolean;
 
-    abstract tryAddShelfToBox(
-        shelves: Shelf[],
-        item: Rectangle,
-        box: Box,
-        solution: Solution,
-    ): Shelf | null;
+    abstract tryAddItemToNewShelfOfBox(item: Rectangle, box: Box): Shelf | null;
 
-    abstract createNewBoxAndAddShelf(
-        item: Rectangle,
-        solution: Solution,
-    ): boolean;
-
-    abstract checkThenAddToBox(
-        item: Rectangle,
-        solution: Solution,
-        box: Box,
-    ): Shelf | null;
+    abstract tryAddItemToBox(item: Rectangle, box: Box): Shelf | null;
 
     abstract checkThenAdd(item: Rectangle, solution: Solution): boolean;
 
@@ -66,120 +66,140 @@ export class ShelfFirstFit extends ShelfPlacement {
         return sh;
     }
 
-    tryAddItemToShelf(
-        sh: Shelf,
-        item: Rectangle,
-        box: Box,
-        solution: Solution,
-    ): boolean {
-        if (item.isSideway) {
-            item.setRotate();
-        }
-        if (sh.check(item)) {
-            sh.add(item);
-            solution.addRectangle(item, box);
-            return true;
-        }
+    checkItemFitShelf(sh: Shelf, item: Rectangle): boolean {
+        // try upright first
+        const isOriginallySideway = item.isSideway;
 
+        if (item.isSideway) item.setRotate();
+        if (sh.check(item)) return true;
         // then try sideway
         item.setRotate();
-        if (sh.check(item)) {
-            sh.add(item);
-            solution.addRectangle(item, box);
-            return true;
-        }
+        if (sh.check(item)) return true;
+
+        // restore original orientation
+        if (item.isSideway != isOriginallySideway) item.setRotate();
 
         return false;
     }
 
-    tryAddShelfToBox(
-        currentShelves: Shelf[],
-        item: Rectangle,
-        box: Box,
-        solution: Solution,
-    ): Shelf | null {
-        const lastShelf = currentShelves[currentShelves.length - 1];
-        if (
-            lastShelf.y + lastShelf.height + item.getSmallerSide() <=
-            solution.L
-        ) {
-            const sh = this.createNewShelfAndAddItem(
-                lastShelf.y + lastShelf.height,
-                item,
-                solution.L,
-            );
+    tryAddItemToShelf(sh: Shelf, item: Rectangle): boolean {
+        if (this.checkItemFitShelf(sh, item)) {
+            sh.add(item);
+            return true;
+        }
+        return false;
+    }
+
+    tryAddItemToNewShelfOfBox(item: Rectangle, box: Box): Shelf | null {
+        const currentShelves = this.getShelvesFromBox(box.id);
+        let currentY = 0;
+        if (currentShelves.length > 0) {
+            const lastShelf = currentShelves[currentShelves.length - 1];
+            currentY = lastShelf.y + lastShelf.height;
+        }
+
+        // add lowest shelf possible -> getSmallerSide
+        if (currentY + item.getSmallerSide() <= box.L) {
+            // rotate item sideway and add
+            const sh = this.createNewShelfAndAddItem(currentY, item, box.L);
             currentShelves.push(sh);
-            solution.addRectangle(item, box);
             return sh;
         }
         return null;
     }
 
-    createNewBoxAndAddShelf(item: Rectangle, solution: Solution): boolean {
-        const box: Box = solution.addNewBox();
-        const sh = this.createNewShelfAndAddItem(0, item, solution.L);
+    addItemToNewShelfOfNewBox(item: Rectangle, box: Box): boolean {
+        const sh = this.createNewShelfAndAddItem(0, item, box.L);
         this.boxToShelf.set(box.id, [sh]);
-        solution.addRectangle(item, box);
         return true;
     }
 
     checkThenRemoveFromPlacement(item: Rectangle, box: Box): boolean {
         // get the shelves of this box
-        const shelves = this.boxToShelf.get(box.id);
-        if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+        const shelves = this.getShelvesFromBox(box.id);
 
         let removed = false;
         for (const sh of shelves) {
-            if (sh.remove(item)) removed = true;
+            if (sh.remove(item)) {
+                removed = true;
+                break;
+            }
         }
         if (!removed) throw new Error("Item not found in any shelf/not in box");
 
-        // Remove empty shelves from last to first (prevent shifting)
         for (let i = shelves.length - 1; i >= 0; i--) {
-            if (shelves[i].rectangles.length == 0) {
+            if (shelves[i].rectangles.length === 0) {
                 shelves.splice(i, 1);
             }
         }
 
-        // Recalculate y positions
+        // Recompute shelf Y positions
         let y = 0;
         for (const shelf of shelves) {
             shelf.y = y;
             y += shelf.height;
         }
 
-        return false;
+        // If no shelves left, delete box mapping
+        if (shelves.length === 0) {
+            this.boxToShelf.delete(box.id);
+        }
+        return true;
     }
 
-    checkThenAddToBox(
-        item: Rectangle,
-        solution: Solution,
-        box: Box,
-    ): Shelf | null {
+    tryAddItemToBox(item: Rectangle, box: Box): Shelf | null {
         if (box.areaLeft <= item.area) return null;
 
         // get the shelves of this box
-        const shelves = this.boxToShelf.get(box.id);
-        if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+        const shelves = this.getShelvesFromBox(box.id);
 
-        // try to add to an existing shelf
+        // try to add to an existing shelf (first fit)
         for (const sh of shelves) {
-            if (this.tryAddItemToShelf(sh, item, box, solution)) return sh;
+            if (this.tryAddItemToShelf(sh, item)) return sh;
         }
 
-        // check if can create a new shelf for this box
-        // return Shelf if created, else null
-        return this.tryAddShelfToBox(shelves, item, box, solution);
+        // try to add to a new shelf of this box
+        return this.tryAddItemToNewShelfOfBox(item, box);
+    }
+
+    checkItemFitBox(item: Rectangle, box: Box): boolean {
+        if (box.areaLeft <= item.area) return false;
+
+        // get the shelves of this box
+        const shelves = this.getShelvesFromBox(box.id);
+
+        // check if item fits to an existing shelf (first fit)
+        for (const sh of shelves) {
+            if (this.checkItemFitShelf(sh, item)) return true;
+        }
+
+        // check if item fits to a new shelf of this box
+        let currentY = 0;
+        if (shelves.length > 0) {
+            const lastShelf = shelves[shelves.length - 1];
+            currentY = lastShelf.y + lastShelf.height;
+        }
+
+        return currentY + item.getSmallerSide() <= box.L;
     }
 
     checkThenAdd(item: Rectangle, solution: Solution): boolean {
         try {
             // loop through each of current box
             for (const box of solution.idToBox.values()) {
-                if (this.checkThenAddToBox(item, solution, box)) return true;
+                if (this.tryAddItemToBox(item, box) != null) {
+                    solution.addRectangle(item, box);
+                    return true;
+                }
             }
+
             // ... else, we have to add a new box and a new shelf to that
-            return this.createNewBoxAndAddShelf(item, solution);
+            const newBox: Box = solution.addNewBox();
+            if (this.addItemToNewShelfOfNewBox(item, newBox)) {
+                solution.addRectangle(item, newBox);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error(error);
             return false;
@@ -188,59 +208,86 @@ export class ShelfFirstFit extends ShelfPlacement {
 }
 
 export class ShelfBestAreaFit extends ShelfFirstFit {
-    leastWastedBoxHeight: number = -1;
-    leastWastedShelfValue: number = -1;
+    leastWastedBoxHeight: number = Infinity;
+    leastWastedShelfValue: number = Infinity;
     bestBox: Box | null = null;
     bestShelf: Shelf | null = null;
+    bestSideway: boolean | null = null; // Track orientation of the best shelf
+
     constructor() {
         super();
         this.init();
     }
 
     init() {
-        this.leastWastedBoxHeight = -1;
-        this.leastWastedShelfValue = -1;
+        this.leastWastedBoxHeight = Infinity;
+        this.leastWastedShelfValue = Infinity;
         this.bestBox = null;
         this.bestShelf = null;
+        this.bestSideway = null;
     }
 
-    calculateWastedShelfValue(sh: Shelf, item: Rectangle, box: Box): boolean {
+    // Evaluate a shelf for an explicit orientation without leaving the item rotated.
+    // If it's globally best, record shelf/box/orientation.
+    private evaluateShelfForOrientation(
+        sh: Shelf,
+        item: Rectangle,
+        box: Box,
+        wantSideway: boolean,
+    ): boolean {
+        const originalSideway = item.isSideway;
+
+        // Rotate to requested orientation if needed
+        if (item.isSideway !== wantSideway) item.setRotate();
+
+        // Compute fit/waste with current getters
         const wd = sh.getWidthDiff(item.getWidth);
         const hd = sh.getHeightDiff(item.getHeight);
+        let foundGlobalBest = false;
+
         if (wd >= 0 && hd >= 0) {
-            const waste = wd + hd;
-            if (
-                this.leastWastedShelfValue < 0 ||
-                waste < this.leastWastedShelfValue
-            ) {
+            const waste = wd + hd; // lower is better
+            if (waste < this.leastWastedShelfValue) {
                 this.leastWastedShelfValue = waste;
                 this.bestBox = box;
                 this.bestShelf = sh;
-                return true;
+                this.bestSideway = wantSideway;
+                foundGlobalBest = true;
             }
         }
-        return false;
+
+        // Restore original orientation
+        if (item.isSideway !== originalSideway) item.setRotate();
+        return foundGlobalBest;
     }
 
-    checkThenAddToABox(item: Rectangle, solution: Solution, box: Box): boolean {
-        this.init();
+    // best fit
+    // try add to BEST SHELF IN A BOX -> for local search
+    tryAddItemToBox(item: Rectangle, box: Box): Shelf | null {
+        if (box.areaLeft <= item.area) return null;
 
-        if (box.areaLeft <= item.area) return false;
         // get the shelves of this box
-        const shelves = this.boxToShelf.get(box.id);
-        if (!shelves || shelves.length == 0) throw new Error("Invalid box id");
+        const shelves = this.getShelvesFromBox(box.id);
+
+        let leastWasted = Infinity;
+        let bestShelf: Shelf | null = null;
         for (const sh of shelves) {
-            this.calculateWastedShelfValue(sh, item, box);
-            item.setRotate();
-            if (!this.calculateWastedShelfValue(sh, item, box))
-                item.setRotate();
+            const wd = sh.getWidthDiff(item.getWidth);
+            const hd = sh.getHeightDiff(item.getHeight);
+            if (wd >= 0 && hd >= 0) {
+                const waste = wd + hd; // should >= 0
+                if (waste < leastWasted) {
+                    leastWasted = waste;
+                    bestShelf = sh;
+                }
+            }
         }
-        if (this.bestShelf) {
-            if (this.tryAddItemToShelf(this.bestShelf, item, box, solution))
-                return true;
+
+        if (bestShelf) {
+            if (this.tryAddItemToShelf(bestShelf, item)) return bestShelf;
         }
-        if (this.tryAddShelfToBox(shelves, item, box, solution)) return true;
-        return false;
+
+        return this.tryAddItemToNewShelfOfBox(item, box);
     }
 
     checkThenAdd(item: Rectangle, solution: Solution): boolean {
@@ -248,64 +295,58 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
 
         try {
             // loop through each of current box
-
             for (const box of solution.idToBox.values()) {
-                // skip to next box if there is no area left for new item
                 if (box.areaLeft <= item.area) continue;
-                // get the shelves of this box
-                const shelves = this.boxToShelf.get(box.id);
-                if (!shelves || shelves.length == 0)
-                    throw new Error("Invalid box id");
+                const shelves = this.getShelvesFromBox(box.id);
 
-                // find the perfect shelf
+                // find the perfect shelf by evaluating both orientations
                 for (const sh of shelves) {
-                    // Try first orientation
-                    this.calculateWastedShelfValue(sh, item, box);
-                    // Try rotated orientation
-                    item.setRotate();
-                    // if no better -> rotate back
-                    if (!this.calculateWastedShelfValue(sh, item, box))
-                        item.setRotate();
+                    // upright (wantSideway = false)
+                    this.evaluateShelfForOrientation(sh, item, box, false);
+                    // sideway (wantSideway = true)
+                    this.evaluateShelfForOrientation(sh, item, box, true);
                 }
 
-                // if there is no perfect shelf -> find perfect box
-                if (!this.bestShelf && !this.bestBox) {
-                    if (!item.isSideway) item.setRotate();
-                    const lastShelf = shelves[shelves.length - 1];
-                    const wastedHeight =
-                        solution.L -
-                        (lastShelf.y + lastShelf.height + item.getHeight);
+                // if there no perfect shelf yet -> find perfect gap in box
+                if (this.bestShelf == null) {
+                    let wastedHeight = box.L - item.getSmallerSide();
+                    if (shelves.length > 0) {
+                        const lastShelf = shelves[shelves.length - 1];
+                        wastedHeight -= lastShelf.y + lastShelf.height;
+                    }
+
                     if (wastedHeight < 0) continue;
-                    if (
-                        this.leastWastedBoxHeight < 0 ||
-                        wastedHeight < this.leastWastedBoxHeight
-                    ) {
+                    if (wastedHeight < this.leastWastedBoxHeight) {
                         this.bestBox = box;
                     }
                 }
             }
 
-            if (this.bestShelf && this.bestBox) {
-                if (
-                    this.tryAddItemToShelf(
-                        this.bestShelf,
-                        item,
-                        this.bestBox,
-                        solution,
-                    )
-                )
+            if (
+                this.bestSideway != null &&
+                this.bestShelf != null &&
+                this.bestBox != null
+            ) {
+                if (this.bestSideway != item.isSideway) item.setRotate();
+                if (this.bestShelf.check(item)) {
+                    this.bestShelf.add(item);
+                    solution.addRectangle(item, this.bestBox);
                     return true;
-            } else if (this.bestBox) {
-                const shelves = this.boxToShelf.get(this.bestBox.id);
-                if (!shelves) throw new Error("Invalid box id");
-                if (
-                    this.tryAddShelfToBox(shelves, item, this.bestBox, solution)
-                )
+                }
+            } else if (this.bestBox != null) {
+                if (this.tryAddItemToNewShelfOfBox(item, this.bestBox)) {
+                    solution.addRectangle(item, this.bestBox);
                     return true;
+                }
             }
 
             // ... else, we have to add a new box and a new shelf to that
-            return this.createNewBoxAndAddShelf(item, solution);
+            const newBox = solution.addNewBox();
+            if (this.addItemToNewShelfOfNewBox(item, newBox)) {
+                solution.addRectangle(item, newBox);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error(error);
             return false;

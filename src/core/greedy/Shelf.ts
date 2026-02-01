@@ -1,7 +1,7 @@
 import type { Rectangle } from "@/models/binpacking";
 
 export class Shelf {
-    readonly width: number;
+    readonly maxWidth: number;
 
     y: number; // position of shelf in box
     height: number;
@@ -10,16 +10,16 @@ export class Shelf {
     // skyline space (height, width)
     // skylines: { x: number; h: number; w: number }[];
 
-    constructor(y: number, height: number, width: number) {
+    constructor(y: number, height: number, maxWidth: number) {
         this.y = y;
         this.height = height;
-        this.width = width;
+        this.maxWidth = maxWidth;
 
         this.currentWidth = 0;
         this.rectangles = [];
 
         // skyline x-coord & space (x, height, width).
-        // Exclude the last "trivial" skyline [this.height, this.width]
+        // Exclude the last "trivial" skyline [this.height, this.maxWidth]
         // this.skylines = [];
     }
 
@@ -28,13 +28,13 @@ export class Shelf {
     }
 
     getWidthDiff(rectWidth: number): number {
-        return this.width - this.currentWidth - rectWidth;
+        return this.maxWidth - this.currentWidth - rectWidth;
     }
 
     check(rect: Rectangle): boolean {
         return (
             rect.getHeight <= this.height &&
-            this.currentWidth + rect.getWidth <= this.width
+            this.currentWidth + rect.getWidth <= this.maxWidth
         );
     }
 
@@ -47,35 +47,13 @@ export class Shelf {
         return true;
     }
 
-    revertAdd(
-        rect: Rectangle,
-        oldX: number,
-        oldY: number,
-        oldRotated: boolean,
-    ): boolean {
-        this.currentWidth -= rect.getWidth;
-        rect.x = oldX;
-        rect.y = oldY;
-        if (rect.rotated !== oldRotated) {
-            rect.setRotate();
-        }
-        this.rectangles.pop();
-        return true;
-    }
-
-    remove(rect: Rectangle): number {
+    remove(rect: Rectangle): boolean {
         // position in shelf
         const index = this.rectangles.indexOf(rect);
-        if (index === -1) return -1;
+        if (index === -1) return false;
 
         // remove rect from rectangles array & update current width
         this.rectangles.splice(index, 1);
-
-        if (this.rectangles.length == 0) {
-            this.currentWidth = 0;
-            this.height = 0;
-            return 0; // has no more rectangles
-        }
 
         // update shelf currentWidth
         this.currentWidth -= rect.getWidth;
@@ -93,17 +71,16 @@ export class Shelf {
             }
             this.height = curBestHeight;
         }
-        return index;
+        return true;
     }
 }
 
-// TODO: Needs fix
-//
+// BACKLOG: Needs fix
 // findSkyline(rect: Rectangle, bestFit: boolean = false): number | null {
 //     let bestIndex = null;
 
 //     for (let i = 0; i < this.skylines.length; i++) {
-//         // TODO: check cho nay kho' vkl (╯°□°）╯︵ ┻━┻
+//         // BACKLOG: check cho nay kho' vkl (╯°□°）╯︵ ┻━┻
 //         if (this.skylines[i].h >= rect.getHeight) {
 //             if (!bestFit) return i;
 //             // findbestHeightFit
@@ -144,7 +121,7 @@ export class Shelf {
 // }
 
 // removeRectangle(rect: Rectangle): boolean {
-//     const index = this.rectangles.indexOf(rect); // TODO: Beware of copy
+//     const index = this.rectangles.indexOf(rect);
 //     if (index === -1) return false;
 
 //     for (let i = 0; i < this.skylines.length; i++) {

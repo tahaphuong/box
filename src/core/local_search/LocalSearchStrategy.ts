@@ -49,7 +49,7 @@ export class HillClimbingStrategy<SOL> implements LocalSearchStrategy<SOL> {
     }
 }
 
-// TODO: to escape local optimum
+// BACKLOG: to escape local optimum
 // class TabuSearchStrategy<T> implements SearchStrategy<T> {
 //   private tabuList: Set<string> = new Set();
 

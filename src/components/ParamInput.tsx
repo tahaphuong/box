@@ -278,7 +278,7 @@ export function ParamInput() {
                 </div>
             )}
 
-            {/* TODO: Input number neighbors & number iterations */}
+            {/* BACKLOG: Input number neighbors & number iterations */}
 
             {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
 
