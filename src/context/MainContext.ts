@@ -1,5 +1,5 @@
 import { createContext, type Dispatch, type SetStateAction } from "react";
-import { Instance, Solution } from "@/models/binpacking";
+import { Instance, Solution, type SolutionStats } from "@/models/binpacking";
 
 export const MainContext = createContext<{
     instance: Instance | null;
@@ -7,4 +7,7 @@ export const MainContext = createContext<{
 
     solution: Solution | null;
     setSolution: Dispatch<SetStateAction<Solution | null>>;
+
+    stats: SolutionStats | null;
+    setStats: Dispatch<SetStateAction<SolutionStats | null>>;
 } | null>(null);

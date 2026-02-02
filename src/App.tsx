@@ -2,19 +2,20 @@ import "./App.css";
 import "./index.css";
 import ParamInput from "@/components/ParamInput";
 import CurrentInstance from "@/components/CurrentInstance";
-import Playground from "@/components/Playground";
+import Playground from "@/components/playground";
 
 import { useState } from "react";
-import { Instance, Solution } from "@/models/binpacking";
+import { Instance, Solution, type SolutionStats } from "@/models/binpacking";
 import { MainContext } from "@/context/MainContext";
 
 function App() {
     const [instance, setInstance] = useState<Instance | null>(null);
     const [solution, setSolution] = useState<Solution | null>(null);
+    const [stats, setStats] = useState<SolutionStats | null>(null);
 
     return (
         <MainContext.Provider
-            value={{ instance, setInstance, solution, setSolution }}
+            value={{ instance, setInstance, solution, setSolution, stats, setStats }}
         >
             <div className="h-full text-left">
                 <div className="text-4xl font-bold mt-4 mb-4">

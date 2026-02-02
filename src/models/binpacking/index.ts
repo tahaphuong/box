@@ -1,4 +1,6 @@
 export type { GeneratorConfig } from './GeneratorConfig';
+export type { SolutionStats } from './SolutionStats';
+
 export { Rectangle } from './Rectangle';
 export { Instance } from './Instance';
 export { Solution } from './Solution';

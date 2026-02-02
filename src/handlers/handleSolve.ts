@@ -1,4 +1,4 @@
-import { Instance, Solution } from "@/models/binpacking";
+import { Instance, Solution, type SolutionStats } from "@/models/binpacking";
 import type {
     PlacementOptionType,
     SelectionOptionType,
@@ -30,7 +30,7 @@ export function handleSolveBinPacking(
 
     numNeighbors: number,
     maxIters: number
-): Solution {
+): [Solution, SolutionStats] {
     const start = performance.now();
     const selection = createSelectionBinPack(
         selectionOpt as SelectionOptionType,
@@ -38,20 +38,30 @@ export function handleSolveBinPacking(
     );
     
     let solution = new Solution(instance.L);
+    const stats: SolutionStats = {
+        runtime: null,
+        numBox: null,
+        score: null,
+
+        numBoxImproved: null,
+        scoreImproved: null,
+    }
 
     switch (algo) {
         case Algo.GREEDY: {
             const placement = createPlacementBinPack(
                 placementOpt as PlacementOptionType,
             );
-            const algo = new GreedyAlgo(solution, selection, placement);
-            solution = algo.solve();
+            const algo = new GreedyAlgo(selection, placement);
+            solution = algo.solve(solution);
+
+            stats.numBox = solution.idToBox.size
             break;
         }
         case Algo.LOCAL: {
             const initialPlacement = createPlacementBinPack(PlacementOption.SHELF_FIRST_FIT)
-            const greedyAlgo = new GreedyAlgo(solution, selection, initialPlacement);
-            const greedySolution = greedyAlgo.solve();
+            const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
+            const greedySolution = greedyAlgo.solve(solution);
 
             const strategy = new HillClimbingStrategy<Solution>();
             const terminate = maxIterations(maxIters);
@@ -63,20 +73,29 @@ export function handleSolveBinPacking(
             const betterPlacement = createPlacementBinPack(PlacementOption.SHELF_BEST_AREA_FIT);
             betterPlacement.cloneCurrentPlacementFrom(initialPlacement);
 
+            stats.numBox = greedySolution.idToBox.size;
+            stats.score = objective.score(greedySolution);
+
             const algo = new LocalSearchAlgo(
-                greedySolution,
                 betterPlacement,
                 strategy,
                 terminate,
                 neighborhood,
                 objective,
             );
-            solution = algo.solve();
+            solution = algo.solve(greedySolution);
+
+            const finalScore = objective.score(solution);
+            stats.numBoxImproved = stats.numBox - solution.idToBox.size;
+            stats.scoreImproved = Math.abs(stats.score - finalScore);
+
+            stats.numBox = solution.idToBox.size
+            stats.score = finalScore;
         }
     }
 
     const runtime = performance.now() - start;
-    solution.setRunTime(runtime);
+    stats.runtime = runtime
 
-    return solution;
+    return [solution, stats];
 }

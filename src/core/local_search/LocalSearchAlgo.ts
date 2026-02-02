@@ -12,7 +12,6 @@ export class LocalSearchAlgo<
     Item,
     SOL extends AlgoSolution,
 > implements AlgoInterface<SOL> {
-    solution: SOL;
     placement: GreedyPlacement<Item, SOL>;
 
     private strategy: LocalSearchStrategy<SOL>; // how to pick best moves
@@ -20,7 +19,6 @@ export class LocalSearchAlgo<
     private neighborhood: Neighborhood<Item, SOL>; // geometry, permutation or overlap
     private objective: ObjectiveFunction<SOL>; // how to evaluate the solution
     constructor(
-        initialSolution: SOL,
         currentPlacement: GreedyPlacement<Item, SOL>,
 
         strategy: LocalSearchStrategy<SOL>,
@@ -28,7 +26,6 @@ export class LocalSearchAlgo<
         neighborhood: Neighborhood<Item, SOL>,
         objective: ObjectiveFunction<SOL>,
     ) {
-        this.solution = initialSolution;
         this.placement = currentPlacement;
 
         this.strategy = strategy;
@@ -37,20 +34,20 @@ export class LocalSearchAlgo<
         this.objective = objective;
     }
 
-    solve(): SOL {
+    solve(solution: SOL): SOL {
         const stats: Stats = {
             iteration: 0,
-            bestScore: this.objective.score(this.solution),
+            bestScore: this.objective.score(solution),
             stagnationCounter: 0,
         };
 
         while (!this.terminate(stats)) {
             const moves = this.neighborhood.getAvailableMoves(
-                this.solution,
+                solution,
                 this.placement,
             );
             const [nextMove, nextMoveScore] = this.strategy.pickNext(
-                this.solution,
+                solution,
                 moves,
                 stats,
                 this.objective,
@@ -58,10 +55,10 @@ export class LocalSearchAlgo<
 
             // If found "suitable" move -> apply (new neighbor)
             if (nextMove) {
-                nextMove.apply(this.solution, true);
+                nextMove.apply(solution, true);
             }
             this.strategy.update(nextMove, nextMoveScore, stats);
         }
-        return this.solution;
+        return solution;
     }
 }

@@ -8,24 +8,21 @@ export class GreedyAlgo<
 > implements AlgoInterface<SOL> {
     selection: GreedySelection<Item>; // Holds list of items, return the next item to evaluate
     placement: GreedyPlacement<Item, SOL>; // Receives the current solution & next item, return if it's possible to add it to solution
-    solution: SOL; // the main solution
 
     constructor(
-        emptySolution: SOL,
         selection: GreedySelection<Item>,
         placement: GreedyPlacement<Item, SOL>,
     ) {
-        this.solution = emptySolution;
         this.selection = selection;
         this.placement = placement;
     }
 
-    solve(): SOL {
+    solve(solution: SOL): SOL {
         let item = this.selection.getNextItem();
         while (item) {
-            this.placement.checkThenAdd(item, this.solution);
+            this.placement.checkThenAdd(item, solution);
             item = this.selection.getNextItem();
         }
-        return this.solution;
+        return solution;
     }
 }
