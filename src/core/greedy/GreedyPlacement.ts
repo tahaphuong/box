@@ -4,6 +4,7 @@ import { PlacementOption, type PlacementOptionType } from "@/models";
 
 export interface GreedyPlacement<Item, SOL> {
     checkThenAdd(item: Item, solution: SOL): boolean;
+    cloneCurrentPlacementFrom(placement: GreedyPlacement<Item, SOL>): void;
 }
 
 export abstract class ShelfPlacement implements GreedyPlacement<
@@ -20,6 +21,10 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         const currentShelves = this.boxToShelf.get(boxId);
         if (currentShelves == undefined) throw new Error("Invalid box id");
         return currentShelves;
+    }
+
+    cloneCurrentPlacementFrom(placement: ShelfPlacement): void {
+        this.boxToShelf = new Map(placement.boxToShelf);
     }
 
     abstract createNewShelfAndAddItem(
