@@ -62,7 +62,7 @@ const TableRectangles = ({
                         <TableHead className="w-0.5">Id</TableHead>
                         <TableHead className="w-2.5">Width</TableHead>
                         <TableHead className="w-2.5">Height</TableHead>
-                        <TableHead className="w-0.5">Rotated</TableHead>
+                        <TableHead className="w-0.5">Is rotated</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

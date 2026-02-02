@@ -39,29 +39,34 @@ export class Shelf {
     }
 
     add(rect: Rectangle): boolean {
-        rect.x = this.currentWidth;
+        this.rectangles.push(rect);
+
+        // update shelf current width
+        let curWidth = 0;
+        for (const r of this.rectangles) {
+            curWidth += r.getWidth
+        }
+        this.currentWidth = curWidth
+        // update rect coordinates
+        rect.x = curWidth - rect.getWidth;
         rect.y = this.y;
 
-        this.currentWidth = this.currentWidth + rect.getWidth;
-        this.rectangles.push(rect);
         return true;
-    }
+    } 
 
     remove(rect: Rectangle): boolean {
-        // position in shelf
         const index = this.rectangles.indexOf(rect);
-        if (index === -1) return false;
-
-        // remove rect from rectangles array & update current width
+        if (index === -1) throw new Error(`Rect ${rect.id} is not in shelf ${this}`);
         this.rectangles.splice(index, 1);
 
-        // update shelf currentWidth
-        this.currentWidth -= rect.getWidth;
-
-        // update rectangles x
-        for (let i = index; i < this.rectangles.length; i++) {
-            this.rectangles[i].x -= rect.getWidth;
+        // update rects x and shelf current width
+        let curWidth = 0;
+        for (const r of this.rectangles) {
+            r.x = curWidth;
+            curWidth += r.getWidth
         }
+        this.currentWidth = curWidth
+
 
         // update shelf height
         if (this.height == rect.getHeight) {
@@ -71,6 +76,7 @@ export class Shelf {
             }
             this.height = curBestHeight;
         }
+
         return true;
     }
 }

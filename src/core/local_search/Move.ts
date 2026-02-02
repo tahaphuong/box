@@ -32,6 +32,8 @@ export class RelocateRectShelf extends Move<Solution> {
     currentPlacement: ShelfPlacement;
     rect: Rectangle;
     originalBoxId: number;
+    isOriginallySideway: boolean;
+
     newBoxId: number;
     tempMoveApplied: boolean;
 
@@ -44,6 +46,7 @@ export class RelocateRectShelf extends Move<Solution> {
         this.currentPlacement = currentPlacement;
         this.rect = rect;
         this.originalBoxId = rect.boxId;
+        this.isOriginallySideway = rect.isSideway;
         this.newBoxId = newBoxId;
         this.tempMoveApplied = false;
     }
@@ -74,6 +77,7 @@ export class RelocateRectShelf extends Move<Solution> {
         if (!removed) throw new Error("Item not found in placement");
         solution.removeRectangle(this.rect, currentBox);
         if (currentBox.rectangles.length === 0) solution.removeBox(currentBox);
+        this.rect.reset(); // reset the rectangle
 
         // add rect (to placement and to solution)
         const added = this.currentPlacement.tryAddItemToBox(this.rect, newBox);
@@ -89,6 +93,7 @@ export class RelocateRectShelf extends Move<Solution> {
         const newBox = getBoxInfo(solution, this.newBoxId);
 
         solution.removeRectangle(this.rect, newBox);
+        if (this.rect.isSideway != this.isOriginallySideway) this.rect.setRotate()
         solution.addRectangle(this.rect, originalBox);
 
         this.tempMoveApplied = false;

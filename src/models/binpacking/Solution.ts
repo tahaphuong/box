@@ -3,14 +3,12 @@ import { AlgoSolution } from "@/models";
 
 export class Solution extends AlgoSolution {
     readonly L: number;
-    rectToBox: Map<number, number>; // an id-to-id dictionary
-    idToBox: Map<number, Box>; // an id-to-Box dictionary
+    idToBox: Map<number, Box>; // an boxId-to-Box dictionary
     incId: number;
 
     constructor(L: number) {
         super();
         this.L = L;
-        this.rectToBox = new Map();
         this.idToBox = new Map();
         this.incId = 0;
     }
@@ -25,13 +23,13 @@ export class Solution extends AlgoSolution {
     }
 
     addRectangle(rect: Rectangle, box: Box): void {
-        rect.setBoxId(box.id);
+        if (this.idToBox.get(box.id) != box) throw new Error("Box is not in solution")
+        rect.boxId = box.id;
         box.addRectangle(rect);
-        this.rectToBox.set(rect.id, box.id);
     }
     removeRectangle(rect: Rectangle, box: Box): void {
-        rect.setBoxId(-1);
+        if (this.idToBox.get(box.id) != box) throw new Error("Box is not in solution")
+        rect.boxId = -1;
         box.removeRectangle(rect);
-        this.rectToBox.delete(rect.id);
     }
 }

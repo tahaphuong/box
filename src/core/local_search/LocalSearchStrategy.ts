@@ -18,11 +18,11 @@ export class HillClimbingStrategy<SOL> implements LocalSearchStrategy<SOL> {
     pickNext(
         current: SOL,
         moves: Move<SOL>[],
-        _: Stats,
+        stats: Stats,
         objective: ObjectiveFunction<SOL>,
     ): [Move<SOL> | null, number] {
         let bestMove: Move<SOL> | null = null;
-        let bestMoveScore = Number.NEGATIVE_INFINITY;
+        let bestMoveScore = stats.bestScore;
 
         for (const m of moves) {
             const mScore = m.getScore(objective, current);

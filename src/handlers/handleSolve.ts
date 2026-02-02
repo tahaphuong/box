@@ -48,7 +48,7 @@ export function handleSolveBinPacking(
             const greedyAlgo = new GreedyAlgo(solution, selection, placement);
             const greedySolution = greedyAlgo.solve();
             const strategy = new HillClimbingStrategy<Solution>();
-            const terminate = maxIterations(20);
+            const terminate = maxIterations(5000);
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 10,

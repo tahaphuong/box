@@ -66,6 +66,7 @@ export class ShelfFirstFit extends ShelfPlacement {
         return sh;
     }
 
+    // check both orientations if fit in shelf
     checkItemFitShelf(sh: Shelf, item: Rectangle): boolean {
         // try upright first
         const isOriginallySideway = item.isSideway;
@@ -76,7 +77,7 @@ export class ShelfFirstFit extends ShelfPlacement {
         item.setRotate();
         if (sh.check(item)) return true;
 
-        // restore original orientation
+        // restore original orientation if can't fit
         if (item.isSideway != isOriginallySideway) item.setRotate();
 
         return false;
@@ -120,23 +121,25 @@ export class ShelfFirstFit extends ShelfPlacement {
 
         let removed = false;
         for (const sh of shelves) {
-            if (sh.remove(item)) {
-                removed = true;
+            if (sh.rectangles.includes(item)) {
+                removed = sh.remove(item);
                 break;
             }
         }
         if (!removed) throw new Error("Item not found in any shelf/not in box");
 
+        // remove empty shelves
         for (let i = shelves.length - 1; i >= 0; i--) {
             if (shelves[i].rectangles.length === 0) {
                 shelves.splice(i, 1);
             }
         }
 
-        // Recompute shelf Y positions
+        // Recompute shelf Y positions for shelf and its rectangles
         let y = 0;
         for (const shelf of shelves) {
             shelf.y = y;
+            for (const rect of shelf.rectangles) rect.y = y 
             y += shelf.height;
         }
 
@@ -264,27 +267,24 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
     // best fit
     // try add to BEST SHELF IN A BOX -> for local search
     tryAddItemToBox(item: Rectangle, box: Box): Shelf | null {
+        this.init();
+
         if (box.areaLeft <= item.area) return null;
 
         // get the shelves of this box
         const shelves = this.getShelvesFromBox(box.id);
 
-        let leastWasted = Infinity;
-        let bestShelf: Shelf | null = null;
+
         for (const sh of shelves) {
-            const wd = sh.getWidthDiff(item.getWidth);
-            const hd = sh.getHeightDiff(item.getHeight);
-            if (wd >= 0 && hd >= 0) {
-                const waste = wd + hd; // should >= 0
-                if (waste < leastWasted) {
-                    leastWasted = waste;
-                    bestShelf = sh;
-                }
-            }
+            // upright (wantSideway = false)
+            this.evaluateShelfForOrientation(sh, item, box, false);
+            // sideway (wantSideway = true)
+            this.evaluateShelfForOrientation(sh, item, box, true);
+            
         }
 
-        if (bestShelf) {
-            if (this.tryAddItemToShelf(bestShelf, item)) return bestShelf;
+        if (this.bestSideway != null && this.bestShelf != null) {
+            if (this.tryAddItemToShelf(this.bestShelf, item)) return this.bestShelf;
         }
 
         return this.tryAddItemToNewShelfOfBox(item, box);

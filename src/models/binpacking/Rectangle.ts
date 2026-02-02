@@ -49,12 +49,8 @@ export class Rectangle {
     }
 
     // SETTERS
-    setRotate() {
+    setRotate(): void {
         this.rotated = !this.rotated;
         this.isSideway = !this.isSideway;
-    }
-    setBoxId(boxId: number) {
-        this.boxId = boxId;
-        return this; // Method chaining?
     }
 }
