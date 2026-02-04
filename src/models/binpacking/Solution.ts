@@ -22,13 +22,21 @@ export class Solution extends AlgoSolution {
         this.idToBox.delete(box.id);
     }
 
-    addRectangle(rect: Rectangle, box: Box): void {
-        if (this.idToBox.get(box.id) != box) throw new Error("Box is not in solution")
-        rect.boxId = box.id;
+    addRectangle(rect: Rectangle, boxId: number): void {
+        const box = this.idToBox.get(boxId);
+        if (!box)
+            throw new Error(
+                `Add rect ${rect.id} failed: Box ${boxId} is not in solution`,
+            );
+        rect.boxId = boxId;
         box.addRectangle(rect);
     }
-    removeRectangle(rect: Rectangle, box: Box): void {
-        if (this.idToBox.get(box.id) != box) throw new Error("Box is not in solution")
+    removeRectangle(rect: Rectangle, boxId: number): void {
+        const box = this.idToBox.get(boxId);
+        if (!box)
+            throw new Error(
+                `Remove rect ${rect.id} failed: Box ${boxId} is not in solution`,
+            );
         rect.boxId = -1;
         box.removeRectangle(rect);
     }

@@ -12,9 +12,9 @@ export class LocalSearchAlgo<
     Item,
     SOL extends AlgoSolution,
 > implements AlgoInterface<SOL> {
-    placement: GreedyPlacement<Item, SOL>;
+    placement: GreedyPlacement<Item, SOL>; // to generate moves from current placement
 
-    private strategy: LocalSearchStrategy<SOL>; // how to pick best moves
+    private strategy: LocalSearchStrategy<SOL>; // how to pick best move
     private terminate: Termination; // termination criteria based on stats
     private neighborhood: Neighborhood<Item, SOL>; // geometry, permutation or overlap
     private objective: ObjectiveFunction<SOL>; // how to evaluate the solution
@@ -42,10 +42,7 @@ export class LocalSearchAlgo<
         };
 
         while (!this.terminate(stats)) {
-            const moves = this.neighborhood.getAvailableMoves(
-                solution,
-                this.placement,
-            );
+            const moves = this.neighborhood.getAvailableMoves(this.placement);
             const [nextMove, nextMoveScore] = this.strategy.pickNext(
                 solution,
                 moves,
