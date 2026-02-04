@@ -29,14 +29,14 @@ export function handleSolveBinPacking(
     placementOpt: string,
 
     numNeighbors: number,
-    maxIters: number
+    maxIters: number,
 ): [Solution, SolutionStats] {
     const start = performance.now();
     const selection = createSelectionBinPack(
         selectionOpt as SelectionOptionType,
         instance.rectangles,
     );
-    
+
     let solution = new Solution(instance.L);
     const stats: SolutionStats = {
         runtime: null,
@@ -45,7 +45,7 @@ export function handleSolveBinPacking(
 
         numBoxImproved: null,
         scoreImproved: null,
-    }
+    };
 
     switch (algo) {
         case Algo.GREEDY: {
@@ -55,23 +55,29 @@ export function handleSolveBinPacking(
             const algo = new GreedyAlgo(selection, placement);
             solution = algo.solve(solution);
 
-            stats.numBox = solution.idToBox.size
+            stats.numBox = solution.idToBox.size;
             break;
         }
         case Algo.LOCAL: {
-            const initialPlacement = createPlacementBinPack(PlacementOption.SHELF_FIRST_FIT)
+            const initialPlacement = createPlacementBinPack(
+                PlacementOption.SHELF_FIRST_FIT,
+            );
             const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
             const greedySolution = greedyAlgo.solve(solution);
 
+            // then improve
             const strategy = new HillClimbingStrategy<Solution>();
             const terminate = maxIterations(maxIters);
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
+                instance.rectangles.length,
             );
             const objective = new UltilizationBox();
-            const betterPlacement = createPlacementBinPack(PlacementOption.SHELF_BEST_AREA_FIT);
-            betterPlacement.cloneCurrentPlacementFrom(initialPlacement);
+            const betterPlacement = createPlacementBinPack(
+                PlacementOption.SHELF_BEST_AREA_FIT,
+            );
+            betterPlacement.clonePlacementFrom(initialPlacement);
 
             stats.numBox = greedySolution.idToBox.size;
             stats.score = objective.score(greedySolution);
@@ -89,13 +95,13 @@ export function handleSolveBinPacking(
             stats.numBoxImproved = stats.numBox - solution.idToBox.size;
             stats.scoreImproved = Math.abs(stats.score - finalScore);
 
-            stats.numBox = solution.idToBox.size
+            stats.numBox = solution.idToBox.size;
             stats.score = finalScore;
         }
     }
 
     const runtime = performance.now() - start;
-    stats.runtime = runtime
+    stats.runtime = runtime;
 
     return [solution, stats];
 }

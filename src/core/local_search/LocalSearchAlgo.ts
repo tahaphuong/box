@@ -42,7 +42,10 @@ export class LocalSearchAlgo<
         };
 
         while (!this.terminate(stats)) {
-            const moves = this.neighborhood.getAvailableMoves(this.placement);
+            const moves = this.neighborhood.getAvailableMoves(
+                solution,
+                this.placement,
+            );
             const [nextMove, nextMoveScore] = this.strategy.pickNext(
                 solution,
                 moves,

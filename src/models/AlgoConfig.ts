@@ -10,9 +10,8 @@ export const SelectionOption = {
 
 export const PlacementOption = {
     SHELF_FIRST_FIT: "SFF",
-    SHELF_BEST_WIDTH_FIT: "SBWF",
-    SHELF_BEST_HEIGHT_FIT: "SBHF",
     SHELF_BEST_AREA_FIT: "SBAF",
+    BOTTOM_LEFT: "BL",
 } as const;
 
 export const NeighborhoodOption = {

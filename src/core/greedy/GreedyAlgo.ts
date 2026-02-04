@@ -1,5 +1,5 @@
 import { GreedySelection } from "./GreedySelection";
-import { type GreedyPlacement } from "./GreedyPlacement";
+import { type GreedyPlacement } from "./placement/GreedyPlacement";
 import type { AlgoInterface, AlgoSolution } from "@/models";
 
 export class GreedyAlgo<
