@@ -15,40 +15,41 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         void other;
     }
 
-    moveDown(item: Rectangle, rectangles: Rectangle[]): number {
+    moveDown(x: number, width: number, rectangles: Rectangle[]): number {
         let targetY = 0; // Default to the very bottom
         for (const rect of rectangles) {
-            if (
-                rect.x < item.x + item.getWidth &&
-                rect.x + rect.getWidth > item.x
-            ) {
-                // if (rect.y + rect.getHeight <= item.y) {}
+            // overlap in X with candidate
+            if (rect.x < x + width && rect.x + rect.getWidth > x) {
                 targetY = Math.max(targetY, rect.y + rect.getHeight);
             }
         }
         return targetY;
     }
 
-    moveLeft(item: Rectangle, rectangles: Rectangle[]): number {
-        let targetX = 0; // Default to the very bottom
+    moveLeft(y: number, height: number, rectangles: Rectangle[]): number {
+        let targetX = 0; // Default to the very left
         for (const rect of rectangles) {
-            if (
-                rect.y < item.y + item.getHeight &&
-                rect.y + rect.getHeight > item.y
-            ) {
+            // overlap in Y with candidate
+            if (rect.y < y + height && rect.y + rect.getHeight > y) {
                 targetX = Math.max(targetX, rect.x + rect.getWidth);
             }
         }
         return targetX;
     }
 
-    noOverlap(item: Rectangle, rects: Rectangle[]): boolean {
+    noOverlap(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        rects: Rectangle[],
+    ): boolean {
         for (const r of rects) {
             if (
-                item.x < r.x + r.getWidth &&
-                item.x + item.getWidth > r.x &&
-                item.y < r.y + r.getHeight &&
-                item.y + item.getHeight > r.y
+                x < r.x + r.getWidth &&
+                x + width > r.x &&
+                y < r.y + r.getHeight &&
+                y + height > r.y
             ) {
                 return false;
             }
@@ -68,7 +69,16 @@ export class BottomLeftFirstFit implements GreedyPlacement<
             const originalSideway = item.isSideway;
 
             for (let r = 0; r < 2; r++) {
-                item.isSideway = r === 1 ? !originalSideway : originalSideway;
+                const candidateSideway =
+                    r === 1 ? !originalSideway : originalSideway;
+
+                // compute candidate width/height without mutating item
+                const candidateWidth = candidateSideway
+                    ? item.getLargerSide()
+                    : item.getSmallerSide();
+                const candidateHeight = candidateSideway
+                    ? item.getSmallerSide()
+                    : item.getLargerSide();
 
                 const candidates: Array<{ x: number; y: number }> = [
                     { x: 0, y: 0 },
@@ -82,39 +92,47 @@ export class BottomLeftFirstFit implements GreedyPlacement<
                 }
 
                 for (const c of candidates) {
-                    item.x = c.x;
-                    item.y = c.y;
+                    // start at candidate
+                    let cx = c.x;
+                    let cy = c.y;
 
-                    // bottom-left projection
-                    item.y = this.moveDown(item, box.rectangles);
-                    item.x = this.moveLeft(item, box.rectangles);
+                    // bottom-left projection using locals
+                    cy = this.moveDown(cx, candidateWidth, box.rectangles);
+                    cx = this.moveLeft(cy, candidateHeight, box.rectangles);
 
+                    // bounds check
                     if (
-                        item.x < 0 ||
-                        item.y < 0 ||
-                        item.x + item.getWidth > solution.L ||
-                        item.y + item.getHeight > solution.L
+                        cx < 0 ||
+                        cy < 0 ||
+                        cx + candidateWidth > solution.L ||
+                        cy + candidateHeight > solution.L
                     ) {
                         continue;
                     }
 
-                    if (!this.noOverlap(item, box.rectangles)) continue;
-
+                    // overlap check
                     if (
-                        !found ||
-                        item.y < bestY ||
-                        (item.y === bestY && item.x < bestX)
-                    ) {
-                        bestX = item.x;
-                        bestY = item.y;
-                        bestSideway = item.isSideway;
+                        !this.noOverlap(
+                            cx,
+                            cy,
+                            candidateWidth,
+                            candidateHeight,
+                            box.rectangles,
+                        )
+                    )
+                        continue;
+
+                    // bottom-most, then left-most
+                    if (!found || cy < bestY || (cy === bestY && cx < bestX)) {
+                        bestX = cx;
+                        bestY = cy;
+                        bestSideway = candidateSideway;
                         found = true;
                     }
                 }
             }
 
-            item.isSideway = originalSideway;
-
+            // item remains unchanged here
             if (found) {
                 return {
                     boxId: box.id,
@@ -136,6 +154,7 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         const pos = indicatedPos ?? this.findPosition(item, solution);
 
         if (pos) {
+            // apply only final placement
             item.x = pos.x;
             item.y = pos.y;
             item.isSideway = pos.isSideway;

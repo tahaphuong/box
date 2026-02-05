@@ -1,5 +1,4 @@
 import type { Rectangle } from "@/models/binpacking";
-import { create } from "mutative";
 
 export class Shelf {
     readonly maxWidth: number;

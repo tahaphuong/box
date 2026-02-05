@@ -4,7 +4,11 @@ export {
     createNeighborhoodBinPack,
 } from "./neighborhood/Neighborhood";
 export { type Stats } from "./Stats";
-export { type Termination, maxIterations } from "./Termination";
+export {
+    type Termination,
+    maxIterations,
+    iterAndStagnated,
+} from "./Termination";
 export { type ObjectiveFunction, UltilizationBox } from "./Objective";
 export {
     type LocalSearchStrategy,

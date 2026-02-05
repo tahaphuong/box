@@ -41,6 +41,7 @@ export class LocalSearchAlgo<
             );
 
             // If found "suitable" move -> apply (new neighbor)
+
             if (nextNb) {
                 solution = nextNb;
             }

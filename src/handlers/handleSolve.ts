@@ -14,7 +14,7 @@ import {
     LocalSearchAlgo,
     createNeighborhoodBinPack,
     UltilizationBox,
-    maxIterations,
+    iterAndStagnated,
     HillClimbingStrategy,
 } from "@/core/local_search";
 /**
@@ -68,15 +68,13 @@ export function handleSolveBinPacking(
 
             // then improve
             const strategy = new HillClimbingStrategy<Solution>();
-            const terminate = maxIterations(maxIters);
+            const terminate = iterAndStagnated(maxIters, 2);
             const objective = new UltilizationBox();
 
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
                 instance,
-                initialPlacement,
-                PlacementOption.BOTTOM_LEFT,
             );
 
             // print score

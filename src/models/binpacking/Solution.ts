@@ -3,20 +3,43 @@ import { AlgoSolution } from "@/models";
 import { create, castDraft } from "mutative";
 
 const mark = (target: object) => {
-    if (
-        target instanceof Solution ||
-        target instanceof Box ||
-        target instanceof Rectangle
-    ) {
+    if (target instanceof Solution) {
         return () => {
             const copy = Object.assign(
                 Object.create(Object.getPrototypeOf(target)),
                 target,
             );
-            if (target instanceof Solution)
-                copy.idToBox = new Map(target.idToBox);
-            if (target instanceof Box) copy.rectangles = [...target.rectangles];
+
+            // Replace idToBox with a new Map of cloned Boxes
+            copy.idToBox = new Map();
+            for (const [id, box] of target.idToBox.entries()) {
+                copy.idToBox.set(id, mark(box)!());
+            }
+
             return copy;
+        };
+    }
+
+    if (target instanceof Box) {
+        return () => {
+            const copy = Object.assign(
+                Object.create(Object.getPrototypeOf(target)),
+                target,
+            );
+
+            // Clone rectangles array to track mutations
+            copy.rectangles = target.rectangles.map((rect) => mark(rect)!());
+            return copy;
+        };
+    }
+
+    if (target instanceof Rectangle) {
+        return () => {
+            // Shallow copy is enough for primitives in Rectangle
+            return Object.assign(
+                Object.create(Object.getPrototypeOf(target)),
+                target,
+            );
         };
     }
 };
@@ -48,8 +71,16 @@ export class Solution extends AlgoSolution {
         this.idToBox.set(box.id, box);
         return box;
     }
-    removeBox(box: Box): void {
-        this.idToBox.delete(box.id);
+    removeBox(boxId: number): void {
+        const box = this.idToBox.get(boxId);
+        if (!box)
+            throw new Error(
+                `Remove box ${boxId} failed: Box ${boxId} is not in solution`,
+            );
+        this.idToBox.delete(boxId);
+        // box.rectangles.forEach((rect) => rect.reset());
+        // box.rectangles = [];
+        // box.fillArea = 0;
     }
 
     addRectangle(rect: Rectangle, boxId: number): void {

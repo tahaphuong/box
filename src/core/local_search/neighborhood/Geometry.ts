@@ -1,8 +1,8 @@
 import { Rectangle, Box } from "@/models/binpacking";
 import { Solution } from "@/models/binpacking";
 import { type Neighborhood } from "./Neighborhood";
-import { createPlacementBinPack, type GreedyPlacement } from "@/core/greedy";
-import type { PlacementOptionType } from "@/models";
+import { type GreedyPlacement } from "@/core/greedy";
+import { BottomLeftFirstFit } from "@/core/greedy/placement/BottomLeftPlacement";
 
 export class GeometryNeighborhood implements Neighborhood<Solution> {
     // refer to current box
@@ -10,19 +10,12 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
     totalRectangles: number;
     placement: GreedyPlacement<Rectangle, Solution>;
 
-    constructor(
-        numNeighbors: number,
-        totalRectangles: number,
-        initialPlacement: GreedyPlacement<Rectangle, Solution>,
-        betterPlacementOption: PlacementOptionType,
-    ) {
+    constructor(numNeighbors: number, totalRectangles: number) {
         this.numNeighbors = numNeighbors;
         this.totalRectangles = totalRectangles;
 
         // copy from init placement
-        const betterPlacement = createPlacementBinPack(betterPlacementOption); // BL
-        betterPlacement.copyPlacementState(initialPlacement); // initial is SFF
-        this.placement = betterPlacement;
+        this.placement = new BottomLeftFirstFit();
     }
 
     // minimize
@@ -49,8 +42,10 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
 
         for (const box of picks) {
             const neighbor = currentSol.clone((newSol) => {
-                const rects = [...box.rectangles];
-                newSol.removeBox(box);
+                const draftBox = newSol.idToBox.get(box.id);
+                if (!draftBox) return;
+                const rects = [...draftBox.rectangles];
+                newSol.removeBox(draftBox.id);
                 for (const item of rects) {
                     item.reset();
                     this.placement.checkThenAdd(item, newSol, null);

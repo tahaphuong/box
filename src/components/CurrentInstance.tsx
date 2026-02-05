@@ -22,7 +22,7 @@ import { MainContext } from "@/context/MainContext";
 
 export function CurrentInstance() {
     const [numNeighbors, setNumNeighbors] = useState<string>("10");
-    const [maxIters, setMaxIters] = useState<string>("1000");
+    const [maxIters, setMaxIters] = useState<string>("50");
 
     const [algo, setAlgo] = useState<string>(Algo.GREEDY);
     const [selection, setSelection] = useState<string>(SelectionOption.LONGEST);
@@ -244,8 +244,8 @@ export function CurrentInstance() {
                             />
                             <div className="text-xs text-gray-400">
                                 Local search will try to eliminate low util.
-                                shelves using <strong>SBAF</strong> from initial{" "}
-                                <strong>SFF</strong> solution.
+                                shelves using <strong>Bottom Left</strong> from
+                                initial <strong>SFF</strong> solution.
                             </div>
                         </div>
                     )}

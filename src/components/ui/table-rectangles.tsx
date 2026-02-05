@@ -25,7 +25,7 @@ export const TableRectangles = ({
                         <TableHead className="w-0.5">Id</TableHead>
                         <TableHead className="w-2.5">Width</TableHead>
                         <TableHead className="w-2.5">Height</TableHead>
-                        <TableHead className="w-0.5">Orientation</TableHead>
+                        <TableHead className="w-0.5">Box Id</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -41,7 +41,7 @@ export const TableRectangles = ({
                                 {rect.getHeight}
                             </TableCell>
                             <TableCell className="w-0.5 py-1">
-                                {rect.isSideway ? "sideway" : "upright"}
+                                {rect.boxId}
                             </TableCell>
                         </TableRow>
                     ))}

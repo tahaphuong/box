@@ -30,6 +30,7 @@ export class Box {
         const i = this.rectangles.findIndex((r) => r.id === rect.id);
         if (i !== -1) this.rectangles.splice(i, 1);
         this.fillArea -= rect.area;
+        rect.reset();
     }
 
     get fillRatio(): number {
