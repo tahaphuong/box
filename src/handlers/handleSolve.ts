@@ -59,6 +59,7 @@ export function handleSolveBinPacking(
             break;
         }
         case Algo.LOCAL: {
+            // init solution
             const initialPlacement = createPlacementBinPack(
                 PlacementOption.SHELF_FIRST_FIT,
             );
@@ -68,22 +69,21 @@ export function handleSolveBinPacking(
             // then improve
             const strategy = new HillClimbingStrategy<Solution>();
             const terminate = maxIterations(maxIters);
+            const objective = new UltilizationBox();
+
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
-                instance.rectangles.length,
+                instance,
+                initialPlacement,
+                PlacementOption.BOTTOM_LEFT,
             );
-            const objective = new UltilizationBox();
-            const betterPlacement = createPlacementBinPack(
-                PlacementOption.SHELF_BEST_AREA_FIT,
-            );
-            betterPlacement.clonePlacementFrom(initialPlacement);
 
+            // print score
             stats.numBox = greedySolution.idToBox.size;
             stats.score = objective.score(greedySolution);
 
             const algo = new LocalSearchAlgo(
-                betterPlacement,
                 strategy,
                 terminate,
                 neighborhood,
@@ -91,6 +91,7 @@ export function handleSolveBinPacking(
             );
             solution = algo.solve(greedySolution);
 
+            // print score
             const finalScore = objective.score(solution);
             stats.numBoxImproved = stats.numBox - solution.idToBox.size;
             stats.scoreImproved = Math.abs(stats.score - finalScore);

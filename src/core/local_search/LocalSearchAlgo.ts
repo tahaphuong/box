@@ -6,28 +6,19 @@ import type {
     Stats,
     LocalSearchStrategy,
 } from ".";
-import type { GreedyPlacement } from "@/core/greedy";
-
 export class LocalSearchAlgo<
-    Item,
     SOL extends AlgoSolution,
 > implements AlgoInterface<SOL> {
-    placement: GreedyPlacement<Item, SOL>; // to generate moves from current placement
-
     private strategy: LocalSearchStrategy<SOL>; // how to pick best move
     private terminate: Termination; // termination criteria based on stats
-    private neighborhood: Neighborhood<Item, SOL>; // geometry, permutation or overlap
+    private neighborhood: Neighborhood<SOL>; // geometry, permutation or overlap
     private objective: ObjectiveFunction<SOL>; // how to evaluate the solution
     constructor(
-        currentPlacement: GreedyPlacement<Item, SOL>,
-
         strategy: LocalSearchStrategy<SOL>,
         terminate: Termination,
-        neighborhood: Neighborhood<Item, SOL>,
+        neighborhood: Neighborhood<SOL>,
         objective: ObjectiveFunction<SOL>,
     ) {
-        this.placement = currentPlacement;
-
         this.strategy = strategy;
         this.terminate = terminate;
         this.neighborhood = neighborhood;
@@ -42,22 +33,18 @@ export class LocalSearchAlgo<
         };
 
         while (!this.terminate(stats)) {
-            const moves = this.neighborhood.getAvailableMoves(
-                solution,
-                this.placement,
-            );
-            const [nextMove, nextMoveScore] = this.strategy.pickNext(
-                solution,
-                moves,
+            const neighbors = this.neighborhood.getNeighbors(solution);
+            const [nextNb, nextNbScore] = this.strategy.pickNext(
+                neighbors,
                 stats,
                 this.objective,
             );
 
             // If found "suitable" move -> apply (new neighbor)
-            if (nextMove) {
-                nextMove.apply(solution, true);
+            if (nextNb) {
+                solution = nextNb;
             }
-            this.strategy.update(nextMove, nextMoveScore, stats);
+            this.strategy.update(nextNb, nextNbScore, stats);
         }
         return solution;
     }

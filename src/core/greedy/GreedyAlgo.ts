@@ -20,7 +20,7 @@ export class GreedyAlgo<
     solve(solution: SOL): SOL {
         let item = this.selection.getNextItem();
         while (item) {
-            this.placement.checkThenAdd(item, solution);
+            this.placement.checkThenAdd(item, solution, null);
             item = this.selection.getNextItem();
         }
         return solution;

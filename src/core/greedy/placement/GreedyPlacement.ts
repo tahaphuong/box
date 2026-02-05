@@ -1,11 +1,21 @@
-import { Solution, type Rectangle } from "@/models/binpacking";
-import { PlacementOption, type PlacementOptionType } from "@/models";
+import { Solution, type Position, type Rectangle } from "@/models/binpacking";
+import {
+    AlgoSolution,
+    PlacementOption,
+    type PlacementOptionType,
+} from "@/models";
 import { ShelfBestAreaFit, ShelfFirstFit } from "./ShelfPlacement";
 import { BottomLeftFirstFit } from "./BottomLeftPlacement";
 
-export interface GreedyPlacement<Item, SOL> {
-    checkThenAdd(item: Item, solution: SOL): boolean;
-    clonePlacementFrom(other: GreedyPlacement<Item, SOL>): void;
+export interface GreedyPlacement<Item, SOL extends AlgoSolution> {
+    findPosition(item: Item, solution: SOL): Position | null;
+    checkThenAdd(
+        item: Item,
+        solution: SOL,
+        indicatedPos: Position | null,
+    ): boolean;
+    clone(): GreedyPlacement<Item, SOL>;
+    copyPlacementState(other: GreedyPlacement<Item, SOL>): void;
 }
 
 // Greedy Selection handler

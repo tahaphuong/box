@@ -1,12 +1,5 @@
 import { type GreedyPlacement } from "./GreedyPlacement";
-import { Solution, type Rectangle } from "@/models/binpacking";
-
-export type Position = {
-    boxId: number;
-    x: number;
-    y: number;
-    isSideway: boolean;
-};
+import { Solution, type Rectangle, type Position } from "@/models/binpacking";
 
 export class BottomLeftFirstFit implements GreedyPlacement<
     Rectangle,
@@ -14,8 +7,11 @@ export class BottomLeftFirstFit implements GreedyPlacement<
 > {
     constructor() {}
 
-    // not necessary for BL
-    clonePlacementFrom(other: GreedyPlacement<Rectangle, Solution>): void {
+    // clone() & copy not necessary for BL
+    clone(): GreedyPlacement<Rectangle, Solution> {
+        return this;
+    }
+    copyPlacementState(other: GreedyPlacement<Rectangle, Solution>): void {
         void other;
     }
 
@@ -132,22 +128,18 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         return null;
     }
 
-    addToPosition(
+    checkThenAdd(
         item: Rectangle,
-        position: Position,
         solution: Solution,
-    ): void {
-        item.x = position.x;
-        item.y = position.y;
-        item.isSideway = position.isSideway;
-        solution.addRectangle(item, position.boxId);
-    }
-
-    checkThenAdd(item: Rectangle, solution: Solution): boolean {
-        const pos = this.findPosition(item, solution);
+        indicatedPos: Position | null = null,
+    ): boolean {
+        const pos = indicatedPos ?? this.findPosition(item, solution);
 
         if (pos) {
-            this.addToPosition(item, pos, solution);
+            item.x = pos.x;
+            item.y = pos.y;
+            item.isSideway = pos.isSideway;
+            solution.addRectangle(item, pos.boxId);
             return true;
         }
 

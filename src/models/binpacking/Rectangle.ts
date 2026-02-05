@@ -7,7 +7,6 @@ export class Rectangle {
 
     // SOLUTION: default to false and -1 when INIT
     isSideway: boolean;
-    rotated: boolean;
     x: number;
     y: number;
     boxId: number;
@@ -19,7 +18,6 @@ export class Rectangle {
         this.area = width * height;
 
         this.isSideway = this.width >= this.height;
-        this.rotated = false;
         this.x = -1;
         this.y = -1;
         this.boxId = -1;
@@ -27,7 +25,6 @@ export class Rectangle {
 
     reset() {
         this.isSideway = this.width >= this.height;
-        this.rotated = false;
         this.x = -1;
         this.y = -1;
         this.boxId = -1;
@@ -42,15 +39,9 @@ export class Rectangle {
     }
 
     get getWidth(): number {
-        return this.rotated ? this.height : this.width;
+        return this.isSideway ? this.getLargerSide() : this.getSmallerSide();
     }
     get getHeight(): number {
-        return this.rotated ? this.width : this.height;
-    }
-
-    // SETTERS
-    setRotate(): void {
-        this.rotated = !this.rotated;
-        this.isSideway = !this.isSideway;
+        return this.isSideway ? this.getSmallerSide() : this.getLargerSide();
     }
 }

@@ -1,4 +1,5 @@
 import type { Rectangle } from "@/models/binpacking";
+import { create } from "mutative";
 
 export class Shelf {
     readonly maxWidth: number;
@@ -27,68 +28,38 @@ export class Shelf {
         return util / (this.maxWidth * this.height);
     }
 
-    getHeightDiff(rectHeight: number): number {
-        return this.height - rectHeight;
-    }
-
-    getWidthDiff(rectWidth: number): number {
-        return this.maxWidth - this.currentWidth - rectWidth;
-    }
-
-    check(rect: Rectangle): boolean {
-        return (
-            rect.getHeight <= this.height &&
-            this.currentWidth + rect.getWidth <= this.maxWidth
-        );
-    }
-
-    checkAndRotate(item: Rectangle): boolean {
-        const isOriginallySideway = item.isSideway;
-
-        // try upright first
-        if (item.isSideway) item.setRotate();
-        if (this.check(item)) return true;
-        item.setRotate();
-        if (this.check(item)) return true;
-
-        // restore original orientation if can't fit
-        if (item.isSideway != isOriginallySideway) item.setRotate();
-
-        return false;
-    }
-
     calcWasteOrientation(item: Rectangle, wantSideway: boolean): number | null {
         const originalSideway = item.isSideway;
 
         // Rotate to requested orientation if needed
-        if (item.isSideway !== wantSideway) item.setRotate();
+        item.isSideway = wantSideway;
         const wd = this.maxWidth - this.currentWidth - item.getWidth;
         const hd = this.height - item.getHeight;
 
-        let waste = null;
         if (wd >= 0 && hd >= 0) {
-            waste = wd + hd;
+            item.isSideway = originalSideway;
+            return wd + hd;
         }
-
-        // Restore original orientation
-        if (item.isSideway !== originalSideway) item.setRotate();
-
-        return waste;
+        return null;
     }
 
-    add(rect: Rectangle): boolean {
-        this.rectangles.push(rect);
-
+    getNextPosition(): { x: number; y: number } {
         // update shelf current width
         let curWidth = 0;
         for (const r of this.rectangles) {
             curWidth += r.getWidth;
         }
         this.currentWidth = curWidth;
-        // update rect coordinates
-        rect.x = curWidth - rect.getWidth;
-        rect.y = this.y;
+        return { x: curWidth, y: this.y };
+    }
 
+    add(rect: Rectangle, pos?: { x: number; y: number }): boolean {
+        const { x, y } = pos ? pos : this.getNextPosition();
+        // update rect coordinates
+        rect.x = x;
+        rect.y = y;
+        this.rectangles.push(rect);
+        this.currentWidth += rect.getWidth;
         return true;
     }
 

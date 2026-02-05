@@ -1,5 +1,25 @@
 import { Box, Rectangle } from "@/models/binpacking";
 import { AlgoSolution } from "@/models";
+import { create, castDraft } from "mutative";
+
+const mark = (target: object) => {
+    if (
+        target instanceof Solution ||
+        target instanceof Box ||
+        target instanceof Rectangle
+    ) {
+        return () => {
+            const copy = Object.assign(
+                Object.create(Object.getPrototypeOf(target)),
+                target,
+            );
+            if (target instanceof Solution)
+                copy.idToBox = new Map(target.idToBox);
+            if (target instanceof Box) copy.rectangles = [...target.rectangles];
+            return copy;
+        };
+    }
+};
 
 export class Solution extends AlgoSolution {
     readonly L: number;
@@ -11,6 +31,16 @@ export class Solution extends AlgoSolution {
         this.L = L;
         this.idToBox = new Map();
         this.incId = 0;
+    }
+
+    clone(updateFn?: (draft: Solution) => void): Solution {
+        return create(
+            this,
+            (draft) => {
+                if (updateFn) updateFn(castDraft(draft) as Solution);
+            },
+            { mark, strict: false, enableAutoFreeze: false },
+        );
     }
 
     addNewBox(): Box {

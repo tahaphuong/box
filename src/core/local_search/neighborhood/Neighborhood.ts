@@ -1,26 +1,35 @@
-import { Move } from "../Move";
-import type { GreedyPlacement } from "@/core/greedy";
-import { type NeighborhoodOptionType, NeighborhoodOption } from "@/models";
-import { GeometryShelfNeighborhood } from "./GeometryShelf";
+import { type GreedyPlacement } from "@/core/greedy";
+import {
+    type NeighborhoodOptionType,
+    type PlacementOptionType,
+    AlgoSolution,
+    NeighborhoodOption,
+} from "@/models";
+import { GeometryNeighborhood } from "./Geometry";
+import type { Instance, Rectangle } from "@/models/binpacking";
 
-export interface Neighborhood<Item, SOL> {
-    getAvailableMoves(
-        solution: SOL,
-        placement: GreedyPlacement<Item, SOL>,
-    ): Move<SOL>[];
+export interface Neighborhood<SOL extends AlgoSolution> {
+    getNeighbors(solution: SOL): SOL[];
 }
 
 export function createNeighborhoodBinPack(
     option: NeighborhoodOptionType,
     numNeighbors: number,
-    totalRectangles: number,
+    instance: Instance,
+    initialPlacement: GreedyPlacement<Rectangle, AlgoSolution>,
+    betterPlacementOption: PlacementOptionType,
 ) {
     switch (option) {
         case NeighborhoodOption.GEOMETRY:
-            return new GeometryShelfNeighborhood(numNeighbors, totalRectangles);
         case NeighborhoodOption.RULE:
         case NeighborhoodOption.OVERLAP:
-        default:
-            return new GeometryShelfNeighborhood(numNeighbors, totalRectangles);
+        default: {
+            return new GeometryNeighborhood(
+                numNeighbors,
+                instance.rectangles.length,
+                initialPlacement,
+                betterPlacementOption,
+            );
+        }
     }
 }

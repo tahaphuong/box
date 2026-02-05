@@ -1,6 +1,4 @@
 export { LocalSearchAlgo } from "./LocalSearchAlgo";
-
-export { type Move } from "./Move";
 export {
     type Neighborhood,
     createNeighborhoodBinPack,

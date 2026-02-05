@@ -1,6 +1,7 @@
+import type { AlgoSolution } from "@/models";
 import type { Solution } from "@/models/binpacking";
 
-export interface ObjectiveFunction<SOL> {
+export interface ObjectiveFunction<SOL extends AlgoSolution> {
     score(sol: SOL): number;
     isBetterScore(a: number, b: number): boolean; // better score can be larger/smaller
 }

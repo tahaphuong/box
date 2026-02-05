@@ -1,17 +1,28 @@
 import { Rectangle, Box } from "@/models/binpacking";
 import { Solution } from "@/models/binpacking";
-import { Move } from "../Move";
 import { type Neighborhood } from "./Neighborhood";
-import type { BottomLeftFirstFit } from "@/core/greedy/placement/BottomLeftPlacement";
+import { createPlacementBinPack, type GreedyPlacement } from "@/core/greedy";
+import type { PlacementOptionType } from "@/models";
 
-export class GeometryNeighborhood implements Neighborhood<Rectangle, Solution> {
+export class GeometryNeighborhood implements Neighborhood<Solution> {
     // refer to current box
     numNeighbors: number;
     totalRectangles: number;
+    placement: GreedyPlacement<Rectangle, Solution>;
 
-    constructor(numNeighbors: number, totalRectangles: number) {
+    constructor(
+        numNeighbors: number,
+        totalRectangles: number,
+        initialPlacement: GreedyPlacement<Rectangle, Solution>,
+        betterPlacementOption: PlacementOptionType,
+    ) {
         this.numNeighbors = numNeighbors;
         this.totalRectangles = totalRectangles;
+
+        // copy from init placement
+        const betterPlacement = createPlacementBinPack(betterPlacementOption); // BL
+        betterPlacement.copyPlacementState(initialPlacement); // initial is SFF
+        this.placement = betterPlacement;
     }
 
     // minimize
@@ -27,50 +38,51 @@ export class GeometryNeighborhood implements Neighborhood<Rectangle, Solution> {
         return boxes;
     }
 
-    getAvailableMoves(
-        solution: Solution,
-        placement: BottomLeftFirstFit,
-    ): RelocateRect[] {
-        const sortedBoxes = this.findSortedBoxes(solution);
-        const moves: RelocateRect[] = [];
-        let counter = 0;
+    getNeighbors(currentSol: Solution): Solution[] {
+        const neighbors: Solution[] = [];
 
-        for (let i = 0; i < sortedBoxes.length; i++) {
-            const box = sortedBoxes[i];
+        const picks = this.findSortedBoxes(currentSol).slice(
+            0,
+            this.numNeighbors,
+        );
+        if (picks.length === 0) return neighbors;
+
+        for (const box of picks) {
+            const neighbor = currentSol.clone((newSol) => {
+                const rects = [...box.rectangles];
+                newSol.removeBox(box);
+                for (const item of rects) {
+                    item.reset();
+                    this.placement.checkThenAdd(item, newSol, null);
+                }
+            });
+            neighbors.push(neighbor);
         }
 
-        return moves;
+        return neighbors;
     }
 }
 
-// Between box, using bottom left
-export class RelocateRect extends Move<Solution> {
-    rect: Rectangle;
-    originalBox: Box;
-    destBox: Box;
-    wantSideway: boolean;
-    tempMoveApplied: boolean;
+// get randomRate random, rest from tail
+// getBoxesToUnpack(boxes: Box[], randomRate: number = 0.3): Box[] {
+//     const n = this.numNeighbors;
+//     if (boxes.length === 0 || n <= 0) return [];
+//     if (randomRate <= 0 || randomRate >= 1) randomRate = 0.3;
 
-    constructor(
-        rect: Rectangle,
-        originalBox: Box,
-        destBox: Box,
-        wantSideway: boolean,
-    ) {
-        super();
-        this.rect = rect;
-        this.originalBox = originalBox;
-        this.destBox = destBox;
-        this.wantSideway = wantSideway;
-        this.tempMoveApplied = false;
-    }
-    
-    apply(solution: SOL, isPermanent: boolean): void {
-        
-    };
+//     const tail = boxes.slice(n);
+//     const takeTail = Math.floor(randomRate * n); // 70%
+//     const takeRandom = n - takeTail;
 
-    undo(solution: SOL): void { 
-        
-    };
+//     // get from tail
+//     const sampleTail = tail.slice(0, Math.min(takeTail, tail.length)); // keep order
+//     const selected = new Map<number, Box>();
+//     for (const b of sampleTail) selected.set(b.id, b);
 
-}
+//     // get random
+//     for (let i = 0; i < takeRandom && boxes.length > 0; i++) {
+//         const b = boxes[Math.floor(Math.random() * boxes.length)];
+//         if (!selected.has(b.id)) selected.set(b.id, b);
+//     }
+
+//     return Array.from(selected.values()).slice(0, n);
+// }

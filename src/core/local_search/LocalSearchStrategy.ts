@@ -1,45 +1,46 @@
-import type { Move, Stats, ObjectiveFunction } from ".";
+import type { AlgoSolution } from "@/models";
+import type { Stats, ObjectiveFunction } from ".";
 
-export interface LocalSearchStrategy<SOL> {
+export interface LocalSearchStrategy<SOL extends AlgoSolution> {
     // Pick the next neighbor (e.g., Tabu checks or SA probability)
     pickNext(
-        currentSolution: SOL,
-        moves: Move<SOL>[],
+        neighbors: SOL[],
         stats: Stats,
         objective: ObjectiveFunction<SOL>,
-    ): [Move<SOL> | null, number];
+    ): [SOL | null, number];
 
     // Update internal state (e.g., cooling temperature or updating Tabu list)
-    update(move: Move<SOL> | null, moveScore: number, stats: Stats): void;
+    update(nb: SOL | null, moveScore: number, stats: Stats): void;
 }
 
-export class HillClimbingStrategy<SOL> implements LocalSearchStrategy<SOL> {
+export class HillClimbingStrategy<
+    SOL extends AlgoSolution,
+> implements LocalSearchStrategy<SOL> {
     // always find neighbor with best score
     pickNext(
-        current: SOL,
-        moves: Move<SOL>[],
+        neighbors: SOL[],
         stats: Stats,
         objective: ObjectiveFunction<SOL>,
-    ): [Move<SOL> | null, number] {
-        let bestMove: Move<SOL> | null = null;
+    ): [SOL | null, number] {
+        let bestNb: SOL | null = null;
         let bestMoveScore = stats.bestScore;
 
-        for (const m of moves) {
-            const mScore = m.getScore(objective, current);
+        for (const nb of neighbors) {
+            const mScore = objective.score(nb);
             if (
                 mScore != null &&
                 objective.isBetterScore(mScore, bestMoveScore)
             ) {
-                bestMove = m;
+                bestNb = nb;
                 bestMoveScore = mScore;
             }
         }
         // If found no better neighbor, return bestMove = null
-        return [bestMove, bestMoveScore];
+        return [bestNb, bestMoveScore];
     }
 
-    update(move: Move<SOL> | null, moveScore: number, stats: Stats): void {
-        if (move) {
+    update(nb: SOL | null, moveScore: number, stats: Stats): void {
+        if (nb) {
             stats.stagnationCounter = 0;
             stats.bestScore = moveScore;
         } else {
