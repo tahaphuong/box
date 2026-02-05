@@ -133,7 +133,7 @@ export class ShelfFirstFit extends ShelfPlacement {
             }
 
             const currentY = this.getYNextShelf(box.id);
-            const newShelfHeight = item.getSmallerSide();
+            const newShelfHeight = item.smallerSide;
 
             if (currentY + newShelfHeight <= box.L) {
                 return {
@@ -170,7 +170,7 @@ export class ShelfFirstFit extends ShelfPlacement {
                     bestShelf = this.createNewShelf(
                         pos.boxId,
                         solution.L,
-                        item.getSmallerSide(),
+                        item.smallerSide,
                     );
                 }
 
@@ -189,7 +189,7 @@ export class ShelfFirstFit extends ShelfPlacement {
                 const bestShelf = this.createNewShelf(
                     newBox.id,
                     newBox.L,
-                    item.getSmallerSide(),
+                    item.smallerSide,
                 );
                 if (!bestShelf)
                     throw new Error("Failed to create new box and new shelf");
@@ -239,7 +239,7 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
             if (bestShelf != null && bestSideway != null) continue;
             // if no best shelf found, find best box
             const wastedHeight =
-                box.L - this.getYNextShelf(box.id) - item.getSmallerSide();
+                box.L - this.getYNextShelf(box.id) - item.smallerSide;
 
             if (wastedHeight < 0) continue;
             if (wastedHeight < leastWastedHeight) {
@@ -263,7 +263,7 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
 
         if (bestBox != null) {
             const currentY = this.getYNextShelf(bestBox.id);
-            const newShelfHeight = item.getSmallerSide();
+            const newShelfHeight = item.smallerSide;
 
             if (currentY + newShelfHeight <= bestBox.L) {
                 return {

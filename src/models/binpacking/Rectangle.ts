@@ -4,6 +4,8 @@ export class Rectangle {
     private readonly width: number;
     private readonly height: number;
     readonly area: number;
+    readonly smallerSide: number;
+    readonly largerSide: number;
 
     // SOLUTION: default to false and -1 when INIT
     isSideway: boolean;
@@ -16,6 +18,8 @@ export class Rectangle {
         this.width = width;
         this.height = height;
         this.area = width * height;
+        this.smallerSide = Math.min(width, height);
+        this.largerSide = Math.max(width, height);
 
         this.isSideway = this.width >= this.height;
         this.x = -1;
@@ -30,18 +34,18 @@ export class Rectangle {
         this.boxId = -1;
     }
 
-    // GETTERS
-    getLargerSide(): number {
-        return Math.max(this.width, this.height);
-    }
-    getSmallerSide(): number {
-        return Math.min(this.width, this.height);
-    }
-
     get getWidth(): number {
-        return this.isSideway ? this.getLargerSide() : this.getSmallerSide();
+        return this.isSideway ? this.largerSide : this.smallerSide;
     }
     get getHeight(): number {
-        return this.isSideway ? this.getSmallerSide() : this.getLargerSide();
+        return this.isSideway ? this.smallerSide : this.largerSide;
+    }
+
+    // Non-mutating helpers to query dimensions for a given orientation
+    getWidthWith(isSideway: boolean): number {
+        return isSideway ? this.largerSide : this.smallerSide;
+    }
+    getHeightWith(isSideway: boolean): number {
+        return isSideway ? this.smallerSide : this.largerSide;
     }
 }

@@ -74,17 +74,19 @@ export class BottomLeftFirstFit implements GreedyPlacement<
 
                 // compute candidate width/height without mutating item
                 const candidateWidth = candidateSideway
-                    ? item.getLargerSide()
-                    : item.getSmallerSide();
+                    ? item.largerSide
+                    : item.smallerSide;
                 const candidateHeight = candidateSideway
-                    ? item.getSmallerSide()
-                    : item.getLargerSide();
+                    ? item.smallerSide
+                    : item.largerSide;
 
                 const candidates: Array<{ x: number; y: number }> = [
                     { x: 0, y: 0 },
                 ];
 
-                for (const rect of box.rectangles) {
+                const boxRects = box.rectangles;
+
+                for (const rect of boxRects) {
                     candidates.push(
                         { x: rect.x + rect.getWidth, y: rect.y },
                         { x: rect.x, y: rect.y + rect.getHeight },
@@ -97,8 +99,8 @@ export class BottomLeftFirstFit implements GreedyPlacement<
                     let cy = c.y;
 
                     // bottom-left projection using locals
-                    cy = this.moveDown(cx, candidateWidth, box.rectangles);
-                    cx = this.moveLeft(cy, candidateHeight, box.rectangles);
+                    cy = this.moveDown(cx, candidateWidth, boxRects);
+                    cx = this.moveLeft(cy, candidateHeight, boxRects);
 
                     // bounds check
                     if (
@@ -117,7 +119,7 @@ export class BottomLeftFirstFit implements GreedyPlacement<
                             cy,
                             candidateWidth,
                             candidateHeight,
-                            box.rectangles,
+                            boxRects,
                         )
                     )
                         continue;

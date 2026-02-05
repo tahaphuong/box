@@ -78,9 +78,6 @@ export class Solution extends AlgoSolution {
                 `Remove box ${boxId} failed: Box ${boxId} is not in solution`,
             );
         this.idToBox.delete(boxId);
-        // box.rectangles.forEach((rect) => rect.reset());
-        // box.rectangles = [];
-        // box.fillArea = 0;
     }
 
     addRectangle(rect: Rectangle, boxId: number): void {

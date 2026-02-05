@@ -27,7 +27,7 @@ export class LargestAreaFirst extends GreedySelection<Rectangle> {
 
 export class LongestSideFirst extends GreedySelection<Rectangle> {
     preProcess(): void {
-        this.items.sort((a, b) => b.getLargerSide() - a.getLargerSide());
+        this.items.sort((a, b) => b.largerSide - a.largerSide);
     }
     getNextItem(): Rectangle | null {
         if (this.index == this.items.length) {
