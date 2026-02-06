@@ -20,8 +20,6 @@ export class PermutationNeighborhood implements Neighborhood<Solution> {
     readonly numNeighbors: number;
     readonly randomRate: number;
 
-    placement: GreedyPlacement<Rectangle, Solution>;
-    selection: GreedySelection<Rectangle>; // current packing order
     greedyAlgo: GreedyAlgo<Rectangle, Solution>; // Greedy algorithm instance
 
     constructor(
@@ -36,9 +34,7 @@ export class PermutationNeighborhood implements Neighborhood<Solution> {
         this.numNeighbors = numNeighbors;
         this.randomRate = randomRate;
 
-        this.placement = placement;
-        this.selection = selection; // current selection
-        this.greedyAlgo = new GreedyAlgo(this.selection, this.placement);
+        this.greedyAlgo = new GreedyAlgo(selection, placement);
     }
 
     // minimize (any other functions?? ಥ_ಥ)
@@ -82,23 +78,21 @@ export class PermutationNeighborhood implements Neighborhood<Solution> {
         // clear 1 bin attempt
         for (const box of picks) {
             // reset placement
-            this.placement.clearState();
-            const cloned = this.selection.items.map((item) => item.cloneNew());
+            this.greedyAlgo.placement.clearState();
+            const cloned = this.greedyAlgo.selection.items.map((item) =>
+                item.cloneNew(),
+            );
             const pulled = box.rectangles.map((item) => item.cloneNew());
 
             // reset selection
-            this.selection.items = this.pullRects(cloned, pulled);
-            this.selection.index = 0;
+            this.greedyAlgo.selection.items = this.pullRects(cloned, pulled);
+            this.greedyAlgo.selection.index = 0;
 
             // solve
-            const neighbor = new Solution(currentSol.L);
-            this.greedyAlgo.placement = this.placement;
-            this.greedyAlgo.selection = this.selection;
-            this.greedyAlgo.solve(neighbor);
-
+            const neighbor = this.greedyAlgo.solve(new Solution(currentSol.L));
             neighbors.push(neighbor);
         }
-
+        console.log(neighbors);
         return neighbors;
     }
 }

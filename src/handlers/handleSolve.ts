@@ -4,7 +4,7 @@ import type {
     SelectionOptionType,
     NeighborhoodOptionType,
 } from "@/models";
-import { Algo, PlacementOption } from "@/models";
+import { Algo, NeighborhoodOption, PlacementOption } from "@/models";
 import {
     GreedyAlgo,
     createPlacementBinPack,
@@ -61,11 +61,18 @@ export function handleSolveBinPacking(
         case Algo.LOCAL: {
             // init solution with SFF. Improve with either SBAF or BL (or SFF it self)
             // Note: If init with BL -> can only improve with BL or stateless placements
-            const initialPlacement = createPlacementBinPack(
-                PlacementOption.SHELF_FIRST_FIT,
-            );
-            const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
-            const greedySolution = greedyAlgo.solve(solution);
+
+            if (neighborhoodOpt == NeighborhoodOption.GEOMETRY) {
+                const initialPlacement = createPlacementBinPack(
+                    PlacementOption.SHELF_FIRST_FIT,
+                );
+                const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
+                solution = greedyAlgo.solve(solution);
+                placement.copyPlacementState(initialPlacement);
+            } else if (neighborhoodOpt == NeighborhoodOption.PERMUTATION) {
+                const greedyAlgo = new GreedyAlgo(selection, placement);
+                solution = greedyAlgo.solve(solution);
+            }
 
             // then improve
             const strategy = new HillClimbingStrategy<Solution>();
@@ -73,7 +80,6 @@ export function handleSolveBinPacking(
             const objective = new UltilizationBox();
 
             // (shallow) copy initial placement state (SFF)
-            placement.copyPlacementState(initialPlacement);
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
@@ -83,8 +89,8 @@ export function handleSolveBinPacking(
             );
 
             // print score
-            stats.numBox = greedySolution.idToBox.size;
-            stats.score = objective.score(greedySolution);
+            stats.numBox = solution.idToBox.size;
+            stats.score = objective.score(solution);
 
             const algo = new LocalSearchAlgo(
                 strategy,
@@ -92,12 +98,13 @@ export function handleSolveBinPacking(
                 neighborhood,
                 objective,
             );
-            solution = algo.solve(greedySolution);
+            solution = algo.solve(solution);
 
             // print score
             const finalScore = objective.score(solution);
             stats.numBoxImproved = stats.numBox - solution.idToBox.size;
             stats.scoreImproved = Math.abs(stats.score - finalScore);
+
             stats.numBox = solution.idToBox.size;
             stats.score = finalScore;
 
