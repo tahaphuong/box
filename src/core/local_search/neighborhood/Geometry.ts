@@ -7,6 +7,7 @@ import { getBoxesToUnpack } from "./helpers";
 /**
  * Unpack least util box and try to move them elsewhere
  * in the current placement
+ * (Clear 1 bin)
  */
 export class GeometryNeighborhood implements Neighborhood<Solution> {
     // refer to current box
@@ -32,10 +33,6 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
 
         this.placement = placement;
         this.built = [];
-        /**
-         * BACKLOG: to generalize for all placements:
-         * 1. Implement: placement.removeItem()
-         */
     }
 
     // lesser is worse

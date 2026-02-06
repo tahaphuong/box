@@ -31,9 +31,9 @@ export class LocalSearchAlgo<
             bestScore: this.objective.score(solution),
             stagnationCounter: 0,
         };
-
+        let currentSolution = solution;
         while (!this.terminate(stats)) {
-            const neighbors = this.neighborhood.getNeighbors(solution);
+            const neighbors = this.neighborhood.getNeighbors(currentSolution);
             const [nextNb, nextNbScore] = this.strategy.pickNext(
                 neighbors,
                 stats,
@@ -41,12 +41,11 @@ export class LocalSearchAlgo<
             );
 
             // If found "suitable" move -> apply (new neighbor)
-
             if (nextNb) {
-                solution = nextNb;
+                currentSolution = nextNb;
             }
             this.strategy.update(nextNb, nextNbScore, stats);
         }
-        return solution;
+        return currentSolution;
     }
 }
