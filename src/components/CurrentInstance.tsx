@@ -66,7 +66,9 @@ export function CurrentInstance() {
             Number(numNeighbors),
             Number(maxIters),
         );
-        if (setSolution) setSolution(solution);
+        if (setSolution) {
+            setSolution(solution);
+        }
         if (setStats) setStats(stats);
     };
 
@@ -200,36 +202,33 @@ export function CurrentInstance() {
                     )}
 
                     {/** Choose placement routine */}
-                    {(algo === Algo.GREEDY ||
-                        neighborhood === NeighborhoodOption.PERMUTATION) && (
-                        <div className="flex justify-start gap-2 align-middle">
-                            <Label className="font-medium">Placement:</Label>
-                            <Popover
-                                open={openPlacement}
-                                onOpenChange={setOpenPlacement}
-                            >
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="secondary"
-                                        role="combobox"
-                                        aria-expanded={openPlacement}
-                                        className="w-20 justify-between mt-2"
-                                    >
-                                        {placement}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopOverOptions
-                                    options={PlacementOption}
-                                    option={placement}
-                                    onSelectOption={(val) => {
-                                        setPlacement(val);
-                                        setOpenPlacement(false);
-                                    }}
-                                />
-                            </Popover>
-                        </div>
-                    )}
+                    <div className="flex justify-start gap-2 align-middle">
+                        <Label className="font-medium">Placement:</Label>
+                        <Popover
+                            open={openPlacement}
+                            onOpenChange={setOpenPlacement}
+                        >
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="secondary"
+                                    role="combobox"
+                                    aria-expanded={openPlacement}
+                                    className="w-20 justify-between mt-2"
+                                >
+                                    {placement}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopOverOptions
+                                options={PlacementOption}
+                                option={placement}
+                                onSelectOption={(val) => {
+                                    setPlacement(val);
+                                    setOpenPlacement(false);
+                                }}
+                            />
+                        </Popover>
+                    </div>
 
                     {/** Input num neighbors & max iterations */}
                     {algo === Algo.LOCAL && (
@@ -250,9 +249,8 @@ export function CurrentInstance() {
                                 <div className="text-xs text-gray-400">
                                     Local search with Geometry neighborhood will
                                     try to relocate rectangles from low util
-                                    boxes using <strong>Bottom Left</strong>{" "}
-                                    from an initial <strong>SFF</strong>{" "}
-                                    solution.
+                                    boxes from an initial{" "}
+                                    <strong>Shelf First Fit</strong> solution
                                 </div>
                             )}
                             {neighborhood ===

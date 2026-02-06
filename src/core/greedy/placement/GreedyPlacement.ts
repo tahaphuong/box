@@ -14,8 +14,13 @@ export interface GreedyPlacement<Item, SOL extends AlgoSolution> {
         solution: SOL,
         indicatedPos: Position | null,
     ): boolean;
-    clone(): GreedyPlacement<Item, SOL>;
+    // removeItem(item: Item, solution: SOL): boolean;
+    removeBox(boxId: number): void;
+    clone(
+        updateFn?: (draft: GreedyPlacement<Item, SOL>) => void,
+    ): GreedyPlacement<Item, SOL>;
     copyPlacementState(other: GreedyPlacement<Item, SOL>): void;
+    clearState(): void;
 }
 
 // Greedy Selection handler

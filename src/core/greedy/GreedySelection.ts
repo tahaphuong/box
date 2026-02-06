@@ -3,9 +3,10 @@ import type { Rectangle } from "@/models/binpacking";
 
 export abstract class GreedySelection<Item> {
     items: Item[];
-    index = 0;
+    index: number;
     constructor(items: Item[]) {
         this.items = items;
+        this.index = 0;
         this.preProcess();
     }
     abstract preProcess(): void;

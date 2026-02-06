@@ -1,18 +1,25 @@
 import { type GreedyPlacement } from "./GreedyPlacement";
 import { Solution, type Rectangle, type Position } from "@/models/binpacking";
+// import { create, castDraft } from "mutative";
 
 export class BottomLeftFirstFit implements GreedyPlacement<
     Rectangle,
     Solution
 > {
     constructor() {}
-
-    // clone() & copy not necessary for BL
-    clone(): GreedyPlacement<Rectangle, Solution> {
+    clearState(): void {}
+    clone(
+        updateFn?: (draft: GreedyPlacement<Rectangle, Solution>) => void,
+    ): GreedyPlacement<Rectangle, Solution> {
+        if (updateFn) updateFn(this);
         return this;
     }
+
     copyPlacementState(other: GreedyPlacement<Rectangle, Solution>): void {
         void other;
+    }
+    removeBox(boxId: number): void {
+        void boxId;
     }
 
     moveDown(x: number, width: number, rectangles: Rectangle[]): number {
@@ -35,8 +42,6 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         for (const rect of rectangles) {
             if (rect.y < y + height && rect.y + rect.getHeight > y) {
                 targetX = Math.max(targetX, rect.x + rect.getWidth);
-
-                // check overlap here directly
                 const xOverlap =
                     targetX < rect.x + rect.getWidth &&
                     targetX + width > rect.x;

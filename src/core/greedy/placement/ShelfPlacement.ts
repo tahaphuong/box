@@ -3,10 +3,50 @@ import {
     Solution,
     type Box,
     type Position,
-    type Rectangle,
+    Rectangle,
 } from "@/models/binpacking";
 import { type GreedyPlacement } from "./GreedyPlacement";
 import { create, castDraft } from "mutative";
+
+const mark = (target: object) => {
+    if (target instanceof ShelfPlacement) {
+        return () => {
+            const copy = Object.assign(
+                Object.create(Object.getPrototypeOf(target)),
+                target,
+            );
+            const m = new Map<number, Shelf[]>();
+            for (const [boxId, shelves] of target.boxToShelf.entries()) {
+                m.set(
+                    boxId,
+                    shelves.map((sh) => {
+                        const shelfCopy = Object.assign(
+                            Object.create(Object.getPrototypeOf(sh)),
+                            sh,
+                        );
+                        // Share rectangle references
+                        shelfCopy.rectangles = sh.rectangles;
+                        return shelfCopy;
+                    }),
+                );
+            }
+            copy.boxToShelf = m;
+            return copy;
+        };
+    }
+    if (target instanceof Shelf) {
+        return () => {
+            const copy = Object.assign(
+                Object.create(Object.getPrototypeOf(target)),
+                target,
+            );
+            copy.rectangles = target.rectangles.map((r) =>
+                Object.assign(Object.create(Object.getPrototypeOf(r)), r),
+            );
+            return copy;
+        };
+    }
+};
 
 export abstract class ShelfPlacement implements GreedyPlacement<
     Rectangle,
@@ -17,20 +57,36 @@ export abstract class ShelfPlacement implements GreedyPlacement<
     constructor() {
         this.boxToShelf = new Map();
     }
-
+    removeBox(boxId: number): void {
+        this.boxToShelf.delete(boxId);
+    }
+    clearState(): void {
+        this.boxToShelf.clear();
+    }
+    copyPlacementState(other: GreedyPlacement<Rectangle, Solution>): void {
+        if (other instanceof ShelfPlacement) {
+            this.boxToShelf = new Map(other.boxToShelf);
+        } else {
+            throw new Error("Unsupported type");
+        }
+    }
     // clone when changes
-    clone(updateFn?: (draft: ShelfPlacement) => void): ShelfPlacement {
+    clone(
+        updateFn?: (draft: GreedyPlacement<Rectangle, Solution>) => void,
+    ): GreedyPlacement<Rectangle, Solution> {
         return create(
             this,
             (draft) => {
-                if (updateFn) updateFn(castDraft(draft) as ShelfPlacement);
+                if (updateFn)
+                    updateFn(
+                        castDraft(draft) as GreedyPlacement<
+                            Rectangle,
+                            Solution
+                        >,
+                    );
             },
-            { strict: false, enableAutoFreeze: false },
+            { mark, strict: false, enableAutoFreeze: false },
         );
-    }
-    copyPlacementState(other: ShelfPlacement): void {
-        const clone = other.clone();
-        this.boxToShelf = clone.boxToShelf;
     }
 
     abstract createNewShelf(
@@ -39,6 +95,10 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         height: number,
     ): Shelf | null;
 
+    abstract compactShelvesOfBox(boxId: number): void;
+
+    // abstract removeItem(item: Rectangle, solution: Solution): boolean;
+
     abstract findPosition(item: Rectangle, solution: Solution): Position | null;
 
     abstract checkThenAdd(
@@ -46,8 +106,6 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         solution: Solution,
         indicatedPos: Position | null,
     ): boolean;
-
-    abstract compactShelvesOfBox(boxId: number): void;
 }
 
 export class ShelfFirstFit extends ShelfPlacement {
@@ -57,7 +115,6 @@ export class ShelfFirstFit extends ShelfPlacement {
 
     getYNextShelf(boxId: number): number {
         const currentShelves = this.boxToShelf.get(boxId);
-
         let currentY = 0;
         if (currentShelves && currentShelves.length > 0) {
             const lastShelf = currentShelves[currentShelves.length - 1];
@@ -107,17 +164,35 @@ export class ShelfFirstFit extends ShelfPlacement {
         }
     }
 
+    // removeItem(item: Rectangle, solution: Solution): boolean {
+    //     const shelves = this.boxToShelf.get(item.boxId);
+    //     if (shelves == undefined) throw new Error("Invalid box id");
+
+    //     let removed = false;
+    //     for (const sh of shelves) {
+    //         if (sh.remove(item)) {
+    //             sh.compact(item);
+    //             removed = true;
+    //             break;
+    //         }
+    //     }
+    //     if (!removed) return false;
+    //     solution.removeRectangle(item);
+    //     this.compactShelvesOfBox(item.boxId);
+    //     return true;
+    // }
+
     findPosition(item: Rectangle, solution: Solution): Position | null {
         for (const box of solution.idToBox.values()) {
             if (box.areaLeft <= item.area) continue;
+
             const shelves = this.boxToShelf.get(box.id);
             if (shelves == undefined) throw new Error("Box not in map");
 
             for (let i = 0; i < shelves.length; i++) {
                 const sh = shelves[i];
                 for (const sideway of [false, true]) {
-                    const waste = sh.calcWasteOrientation(item, sideway);
-                    if (waste != null) {
+                    if (sh.check(item, sideway)) {
                         const pos = sh.getNextPosition();
 
                         return {
@@ -194,6 +269,7 @@ export class ShelfFirstFit extends ShelfPlacement {
                 if (!bestShelf)
                     throw new Error("Failed to create new box and new shelf");
                 this.boxToShelf.set(newBox.id, [bestShelf]);
+
                 item.isSideway = true;
                 bestShelf.add(item);
                 solution.addRectangle(item, bestShelf.boxId);
@@ -227,7 +303,7 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
                 const sh = shelves[i];
                 for (const wantSideway of [false, true]) {
                     const waste = sh.calcWasteOrientation(item, wantSideway);
-                    if (waste != null && waste < leastWastedArea) {
+                    if (waste >= 0 && waste < leastWastedArea) {
                         leastWastedArea = waste;
                         bestShelf = sh;
                         bestShelfIndex = i;

@@ -26,9 +26,7 @@ const mark = (target: object) => {
                 Object.create(Object.getPrototypeOf(target)),
                 target,
             );
-
-            // Clone rectangles array to track mutations
-            copy.rectangles = target.rectangles.map((rect) => mark(rect)!());
+            copy.rectangles = target.rectangles;
             return copy;
         };
     }
@@ -89,11 +87,11 @@ export class Solution extends AlgoSolution {
         rect.boxId = boxId;
         box.addRectangle(rect);
     }
-    removeRectangle(rect: Rectangle, boxId: number): void {
-        const box = this.idToBox.get(boxId);
-        if (!box)
+    removeRectangle(rect: Rectangle): void {
+        const box = this.idToBox.get(rect.boxId);
+        if (box == undefined)
             throw new Error(
-                `Remove rect ${rect.id} failed: Box ${boxId} is not in solution`,
+                `Remove rect ${rect.id} failed: Box ${rect.boxId} is not in solution`,
             );
         rect.boxId = -1;
         box.removeRectangle(rect);

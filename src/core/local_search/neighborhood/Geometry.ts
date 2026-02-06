@@ -1,27 +1,41 @@
 import { Rectangle, Box } from "@/models/binpacking";
 import { Solution } from "@/models/binpacking";
-import { type Neighborhood } from "./Neighborhood";
 import { type GreedyPlacement } from "@/core/greedy";
-import { BottomLeftFirstFit } from "@/core/greedy/placement/BottomLeftPlacement";
+import { type Neighborhood } from "./Neighborhood";
+import { getBoxesToUnpack } from "./helpers";
 
+/**
+ * Unpack least util box and try to move them elsewhere
+ * in the current placement
+ */
 export class GeometryNeighborhood implements Neighborhood<Solution> {
     // refer to current box
-    numNeighbors: number;
-    totalRectangles: number;
+    readonly totalRectangles: number;
+    readonly numNeighbors: number;
+    readonly randomRate: number;
+
     placement: GreedyPlacement<Rectangle, Solution>;
-    randomRate: number;
+    built: Array<{
+        sol: Solution;
+        placement: GreedyPlacement<Rectangle, Solution>;
+    }>;
 
     constructor(
         numNeighbors: number,
         totalRectangles: number,
         randomRate: number,
+        placement: GreedyPlacement<Rectangle, Solution>,
     ) {
-        this.numNeighbors = numNeighbors;
         this.totalRectangles = totalRectangles;
-
-        // copy from init placement
-        this.placement = new BottomLeftFirstFit();
+        this.numNeighbors = numNeighbors;
         this.randomRate = randomRate;
+
+        this.placement = placement;
+        this.built = [];
+        /**
+         * BACKLOG: to generalize for all placements:
+         * 1. Implement: placement.removeItem()
+         */
     }
 
     // minimize
@@ -38,8 +52,17 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
     }
 
     getNeighbors(currentSol: Solution): Solution[] {
-        const neighbors: Solution[] = [];
+        if (this.built.length !== 0) {
+            const match = this.built.find((item) => item.sol == currentSol);
+            if (!match) throw new Error("Placement state not found");
 
+            this.placement = match.placement;
+            this.built = []; // throw away old builts
+        }
+        // save current state
+        this.built.push({ sol: currentSol, placement: this.placement });
+
+        const neighbors: Solution[] = [];
         const boxes = this.findSortedBoxes(currentSol).slice(
             0,
             this.numNeighbors,
@@ -53,42 +76,31 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
         if (picks.length === 0) return neighbors;
 
         for (const box of picks) {
+            // 1. build neighbor
+            let pl = this.placement;
+
             const neighbor = currentSol.clone((newSol) => {
                 const draftBox = newSol.idToBox.get(box.id);
                 if (!draftBox) return;
+
                 const rects = [...draftBox.rectangles];
                 newSol.removeBox(draftBox.id);
 
-                for (const item of rects) {
-                    item.reset();
-                    this.placement.checkThenAdd(item, newSol, null);
-                }
+                // 2. create placement clone and do mutations inside the draft
+                const placementClone = this.placement.clone(
+                    (draftPlacement) => {
+                        draftPlacement.removeBox(draftBox.id);
+                        for (const item of rects) {
+                            draftPlacement.checkThenAdd(item, newSol, null);
+                        }
+                    },
+                );
+                pl = placementClone;
             });
+
+            this.built.push({ sol: neighbor, placement: pl });
             neighbors.push(neighbor);
         }
         return neighbors;
     }
-}
-
-// get randomRate random, rest from tail
-function getBoxesToUnpack(boxes: Box[], n: number, randomRate?: number): Box[] {
-    if (boxes.length === 0 || n <= 0) return [];
-    if (randomRate == undefined || randomRate < 0 || randomRate > 1) {
-        return boxes.slice(n);
-    }
-
-    const head = boxes.slice(n);
-    const takeHead = Math.floor((1 - randomRate) * n); // 70%
-
-    // get from tail
-    const sampleHead = head.slice(0, takeHead); // keep order
-    const selected = new Map<number, Box>();
-    for (const b of sampleHead) selected.set(b.id, b);
-    // get random
-    for (let i = 0; i < n - takeHead && boxes.length > 0; i++) {
-        const b = boxes[Math.floor(Math.random() * boxes.length)];
-        if (!selected.has(b.id)) selected.set(b.id, b);
-    }
-
-    return [...selected.values()].slice(0, n);
 }

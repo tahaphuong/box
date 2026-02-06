@@ -34,7 +34,10 @@ export function handleSolveBinPacking(
     const start = performance.now();
     const selection = createSelectionBinPack(
         selectionOpt as SelectionOptionType,
-        instance.rectangles,
+        [...instance.rectangles],
+    );
+    const placement = createPlacementBinPack(
+        placementOpt as PlacementOptionType,
     );
 
     let solution = new Solution(instance.L);
@@ -46,15 +49,9 @@ export function handleSolveBinPacking(
         numBoxImproved: null,
         scoreImproved: null,
     };
-    const placement = createPlacementBinPack(
-        placementOpt as PlacementOptionType,
-    );
 
     switch (algo) {
         case Algo.GREEDY: {
-            const placement = createPlacementBinPack(
-                placementOpt as PlacementOptionType,
-            );
             const algo = new GreedyAlgo(selection, placement);
             solution = algo.solve(solution);
 
@@ -62,7 +59,8 @@ export function handleSolveBinPacking(
             break;
         }
         case Algo.LOCAL: {
-            // init solution
+            // init solution with SFF. Improve with either SBAF or BL (or SFF it self)
+            // Note: If init with BL -> can only improve with BL or stateless placements
             const initialPlacement = createPlacementBinPack(
                 PlacementOption.SHELF_FIRST_FIT,
             );
@@ -74,12 +72,14 @@ export function handleSolveBinPacking(
             const terminate = iterAndStagnated(maxIters, 10, 0.95); // max iter, stagnation threshold, stagnation ratio
             const objective = new UltilizationBox();
 
+            // (shallow) copy initial placement state (SFF)
+            placement.copyPlacementState(initialPlacement);
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
-                instance,
                 placement,
-                0.2, // random rate of selecting neighbors
+                selection,
+                0, // random rate of selecting neighbors
             );
 
             // print score

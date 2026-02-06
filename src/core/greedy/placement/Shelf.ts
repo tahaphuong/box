@@ -27,21 +27,6 @@ export class Shelf {
         return util / (this.maxWidth * this.height);
     }
 
-    calcWasteOrientation(item: Rectangle, wantSideway: boolean): number | null {
-        const originalSideway = item.isSideway;
-
-        // Rotate to requested orientation if needed
-        item.isSideway = wantSideway;
-        const wd = this.maxWidth - this.currentWidth - item.getWidth;
-        const hd = this.height - item.getHeight;
-
-        if (wd >= 0 && hd >= 0) {
-            item.isSideway = originalSideway;
-            return wd + hd;
-        }
-        return null;
-    }
-
     getNextPosition(): { x: number; y: number } {
         // update shelf current width
         let curWidth = 0;
@@ -52,23 +37,53 @@ export class Shelf {
         return { x: curWidth, y: this.y };
     }
 
-    add(rect: Rectangle, pos?: { x: number; y: number }): boolean {
+    calcWasteOrientation(rect: Rectangle, wantSideway: boolean): number {
+        const originalSideway = rect.isSideway;
+
+        // Rotate to requested orientation if needed
+        rect.isSideway = wantSideway;
+        const wd = this.maxWidth - this.currentWidth - rect.getWidth;
+        const hd = this.height - rect.getHeight;
+
+        if (wd >= 0 && hd >= 0) {
+            rect.isSideway = originalSideway;
+            return wd + hd;
+        }
+        return -1;
+    }
+
+    check(rect: Rectangle, wantSideway: boolean): boolean {
+        const originalSideway = rect.isSideway;
+        rect.isSideway = wantSideway;
+
+        const fit =
+            this.maxWidth - this.currentWidth - rect.getWidth >= 0 &&
+            this.height - rect.getHeight >= 0;
+
+        rect.isSideway = originalSideway;
+        return fit;
+    }
+
+    add(rect: Rectangle, pos?: { x: number; y: number }): void {
         const { x, y } = pos ? pos : this.getNextPosition();
         // update rect coordinates
         rect.x = x;
         rect.y = y;
         this.rectangles.push(rect);
         this.currentWidth += rect.getWidth;
-        return true;
     }
 
     remove(rect: Rectangle): boolean {
-        const index = this.rectangles.indexOf(rect);
-        if (index === -1)
-            throw new Error(`Rect ${rect.id} is not in shelf ${this}`);
+        const index = this.rectangles.findIndex((r) => r.id === rect.id);
+        if (index === -1) return false;
+        // throw new Error(`Rect ${rect.id} is not in shelf ${this}`);
         this.rectangles.splice(index, 1);
+        return true;
+    }
 
-        // update rects x and shelf current width
+    compact(rect?: Rectangle): void {
+        // slide the remaining rectangles in
+        // and update x & shelf current width
         let curWidth = 0;
         for (const r of this.rectangles) {
             r.x = curWidth;
@@ -76,15 +91,14 @@ export class Shelf {
         }
         this.currentWidth = curWidth;
 
-        // update shelf height
-        if (this.height == rect.getHeight) {
-            let curBestHeight = 0;
-            for (const r of this.rectangles) {
-                if (r.getHeight > curBestHeight) curBestHeight = r.getHeight;
-            }
-            this.height = curBestHeight;
-        }
+        // update shelf current height
+        // skip update if rect is smaller than shelf height
+        if (rect && rect.getHeight < this.height) return;
 
-        return true;
+        let curBestHeight = 0;
+        for (const r of this.rectangles) {
+            if (r.getHeight > curBestHeight) curBestHeight = r.getHeight;
+        }
+        this.height = curBestHeight;
     }
 }
