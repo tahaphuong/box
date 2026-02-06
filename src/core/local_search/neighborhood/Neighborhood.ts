@@ -32,7 +32,6 @@ export function createNeighborhoodBinPack(
                 numNeighbors,
                 selection.items.length,
                 randomRate,
-
                 placement,
                 selection,
             );

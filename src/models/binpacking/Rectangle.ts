@@ -33,6 +33,17 @@ export class Rectangle {
         this.y = -1;
         this.boxId = -1;
     }
+    cloneNew(): Rectangle {
+        return new Rectangle(this.id, this.width, this.height);
+    }
+    cloneCurrent(): Rectangle {
+        const c = new Rectangle(this.id, this.width, this.height);
+        c.x = this.x;
+        c.y = this.y;
+        c.isSideway = this.isSideway;
+        c.boxId = this.boxId;
+        return c;
+    }
 
     get getWidth(): number {
         return this.isSideway ? this.largerSide : this.smallerSide;

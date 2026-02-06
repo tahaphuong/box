@@ -30,14 +30,9 @@ const mark = (target: object) => {
             return copy;
         };
     }
-
     if (target instanceof Rectangle) {
         return () => {
-            // Shallow copy is enough for primitives in Rectangle
-            return Object.assign(
-                Object.create(Object.getPrototypeOf(target)),
-                target,
-            );
+            return (target as Rectangle).cloneCurrent();
         };
     }
 };

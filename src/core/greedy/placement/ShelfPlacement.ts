@@ -24,7 +24,7 @@ const mark = (target: object) => {
                             Object.create(Object.getPrototypeOf(sh)),
                             sh,
                         );
-                        // Share rectangle references
+                        // Share rectangle references with neighbors
                         shelfCopy.rectangles = sh.rectangles;
                         return shelfCopy;
                     }),
@@ -64,11 +64,10 @@ export abstract class ShelfPlacement implements GreedyPlacement<
         this.boxToShelf.clear();
     }
     copyPlacementState(other: GreedyPlacement<Rectangle, Solution>): void {
-        if (other instanceof ShelfPlacement) {
-            this.boxToShelf = new Map(other.boxToShelf);
-        } else {
+        if (!(other instanceof ShelfPlacement))
             throw new Error("Unsupported type");
-        }
+
+        this.boxToShelf = new Map(other.boxToShelf);
     }
     // clone when changes
     clone(
@@ -163,24 +162,6 @@ export class ShelfFirstFit extends ShelfPlacement {
             this.boxToShelf.delete(boxId);
         }
     }
-
-    // removeItem(item: Rectangle, solution: Solution): boolean {
-    //     const shelves = this.boxToShelf.get(item.boxId);
-    //     if (shelves == undefined) throw new Error("Invalid box id");
-
-    //     let removed = false;
-    //     for (const sh of shelves) {
-    //         if (sh.remove(item)) {
-    //             sh.compact(item);
-    //             removed = true;
-    //             break;
-    //         }
-    //     }
-    //     if (!removed) return false;
-    //     solution.removeRectangle(item);
-    //     this.compactShelvesOfBox(item.boxId);
-    //     return true;
-    // }
 
     findPosition(item: Rectangle, solution: Solution): Position | null {
         for (const box of solution.idToBox.values()) {
@@ -355,3 +336,21 @@ export class ShelfBestAreaFit extends ShelfFirstFit {
         return null;
     }
 }
+
+// removeItem(item: Rectangle, solution: Solution): boolean {
+//     const shelves = this.boxToShelf.get(item.boxId);
+//     if (shelves == undefined) throw new Error("Invalid box id");
+
+//     let removed = false;
+//     for (const sh of shelves) {
+//         if (sh.remove(item)) {
+//             sh.compact(item);
+//             removed = true;
+//             break;
+//         }
+//     }
+//     if (!removed) return false;
+//     solution.removeRectangle(item);
+//     this.compactShelvesOfBox(item.boxId);
+//     return true;
+// }

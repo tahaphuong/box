@@ -79,7 +79,7 @@ export function handleSolveBinPacking(
                 numNeighbors,
                 placement,
                 selection,
-                0, // random rate of selecting neighbors
+                0.2, // random rate of selecting neighbors
             );
 
             // print score
@@ -98,7 +98,6 @@ export function handleSolveBinPacking(
             const finalScore = objective.score(solution);
             stats.numBoxImproved = stats.numBox - solution.idToBox.size;
             stats.scoreImproved = Math.abs(stats.score - finalScore);
-
             stats.numBox = solution.idToBox.size;
             stats.score = finalScore;
 

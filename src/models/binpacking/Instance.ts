@@ -8,8 +8,4 @@ export class Instance {
         this.L = L;
         this.rectangles = rectangles;
     }
-
-    resetAllRectangles() {
-        this.rectangles.forEach((rect) => rect.reset());
-    }
 }

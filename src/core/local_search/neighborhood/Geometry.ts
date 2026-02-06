@@ -38,13 +38,14 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
          */
     }
 
-    // minimize
+    // lesser is worse
     evalBoxToUnpack(box: Box) {
         const u = box.fillRatio; // less fill
         const s = box.rectangles.length / this.totalRectangles; // many little rectangles
         return u * u - s;
     }
 
+    // order smallest to largest -> pick from head
     findSortedBoxes(solution: Solution): Box[] {
         const boxes = [...solution.idToBox.values()];
         boxes.sort((a, b) => this.evalBoxToUnpack(a) - this.evalBoxToUnpack(b));

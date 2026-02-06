@@ -54,7 +54,7 @@ export function CurrentInstance() {
             setError("Please generate an instance first");
             return;
         }
-        instance.resetAllRectangles();
+        instance.rectangles.forEach((rect) => rect.reset());
         if (setSolution) setSolution(null);
 
         const [solution, stats] = handleSolveBinPacking(
@@ -258,8 +258,7 @@ export function CurrentInstance() {
                                 <div className="text-xs text-gray-400">
                                     Local search with Permutation neighborhood
                                     will try to change selection input order and
-                                    repack using <strong>SBAF</strong> placement
-                                    routine.
+                                    repack from an initial solution. routine.
                                 </div>
                             )}
                         </div>
