@@ -46,6 +46,9 @@ export function handleSolveBinPacking(
         numBoxImproved: null,
         scoreImproved: null,
     };
+    const placement = createPlacementBinPack(
+        placementOpt as PlacementOptionType,
+    );
 
     switch (algo) {
         case Algo.GREEDY: {
@@ -68,13 +71,15 @@ export function handleSolveBinPacking(
 
             // then improve
             const strategy = new HillClimbingStrategy<Solution>();
-            const terminate = iterAndStagnated(maxIters, 2);
+            const terminate = iterAndStagnated(maxIters, 10, 0.95); // max iter, stagnation threshold, stagnation ratio
             const objective = new UltilizationBox();
 
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
                 instance,
+                placement,
+                0.2, // random rate of selecting neighbors
             );
 
             // print score
@@ -96,6 +101,8 @@ export function handleSolveBinPacking(
 
             stats.numBox = solution.idToBox.size;
             stats.score = finalScore;
+
+            break;
         }
     }
 

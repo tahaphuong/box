@@ -9,13 +9,19 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
     numNeighbors: number;
     totalRectangles: number;
     placement: GreedyPlacement<Rectangle, Solution>;
+    randomRate: number;
 
-    constructor(numNeighbors: number, totalRectangles: number) {
+    constructor(
+        numNeighbors: number,
+        totalRectangles: number,
+        randomRate: number,
+    ) {
         this.numNeighbors = numNeighbors;
         this.totalRectangles = totalRectangles;
 
         // copy from init placement
         this.placement = new BottomLeftFirstFit();
+        this.randomRate = randomRate;
     }
 
     // minimize
@@ -34,10 +40,16 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
     getNeighbors(currentSol: Solution): Solution[] {
         const neighbors: Solution[] = [];
 
-        const picks = this.findSortedBoxes(currentSol).slice(
+        const boxes = this.findSortedBoxes(currentSol).slice(
             0,
             this.numNeighbors,
         );
+        const picks = getBoxesToUnpack(
+            boxes,
+            this.numNeighbors,
+            this.randomRate,
+        );
+
         if (picks.length === 0) return neighbors;
 
         for (const box of picks) {
@@ -46,6 +58,7 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
                 if (!draftBox) return;
                 const rects = [...draftBox.rectangles];
                 newSol.removeBox(draftBox.id);
+
                 for (const item of rects) {
                     item.reset();
                     this.placement.checkThenAdd(item, newSol, null);
@@ -53,31 +66,29 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
             });
             neighbors.push(neighbor);
         }
-
         return neighbors;
     }
 }
 
 // get randomRate random, rest from tail
-// getBoxesToUnpack(boxes: Box[], randomRate: number = 0.3): Box[] {
-//     const n = this.numNeighbors;
-//     if (boxes.length === 0 || n <= 0) return [];
-//     if (randomRate <= 0 || randomRate >= 1) randomRate = 0.3;
+function getBoxesToUnpack(boxes: Box[], n: number, randomRate?: number): Box[] {
+    if (boxes.length === 0 || n <= 0) return [];
+    if (randomRate == undefined || randomRate < 0 || randomRate > 1) {
+        return boxes.slice(n);
+    }
 
-//     const tail = boxes.slice(n);
-//     const takeTail = Math.floor(randomRate * n); // 70%
-//     const takeRandom = n - takeTail;
+    const head = boxes.slice(n);
+    const takeHead = Math.floor((1 - randomRate) * n); // 70%
 
-//     // get from tail
-//     const sampleTail = tail.slice(0, Math.min(takeTail, tail.length)); // keep order
-//     const selected = new Map<number, Box>();
-//     for (const b of sampleTail) selected.set(b.id, b);
+    // get from tail
+    const sampleHead = head.slice(0, takeHead); // keep order
+    const selected = new Map<number, Box>();
+    for (const b of sampleHead) selected.set(b.id, b);
+    // get random
+    for (let i = 0; i < n - takeHead && boxes.length > 0; i++) {
+        const b = boxes[Math.floor(Math.random() * boxes.length)];
+        if (!selected.has(b.id)) selected.set(b.id, b);
+    }
 
-//     // get random
-//     for (let i = 0; i < takeRandom && boxes.length > 0; i++) {
-//         const b = boxes[Math.floor(Math.random() * boxes.length)];
-//         if (!selected.has(b.id)) selected.set(b.id, b);
-//     }
-
-//     return Array.from(selected.values()).slice(0, n);
-// }
+    return [...selected.values()].slice(0, n);
+}

@@ -16,7 +16,7 @@ export const PlacementOption = {
 
 export const NeighborhoodOption = {
     GEOMETRY: "Geometry",
-    RULE: "Rule-based",
+    PERMUTATION: "Permutation",
     OVERLAP: "Overlap",
 } as const;
 

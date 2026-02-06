@@ -8,8 +8,12 @@ export const maxIterations =
         d.iteration >= limit;
 
 export const iterAndStagnated =
-    (limitIter: number, limitStagnation: number): Termination =>
+    (
+        limitIter: number,
+        limitStagnation: number,
+        bestScore: number,
+    ): Termination =>
     (d) =>
         d.iteration >= limitIter ||
         d.stagnationCounter >= limitStagnation ||
-        d.bestScore >= 0.9;
+        d.bestScore >= bestScore;

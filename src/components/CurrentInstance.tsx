@@ -104,12 +104,10 @@ export function CurrentInstance() {
                             {instance.rectangles.length}
                         </div>
                     </div>
-
                     <TableRectangles
                         isScrollable={isScrollable}
                         instance={instance}
                     />
-
                     {/* Choose algorithm: greedy or local search */}
                     <RadioGroup
                         className="flex justify-items-start mt-2"
@@ -137,7 +135,6 @@ export function CurrentInstance() {
                             style={{ display: "none" }}
                         ></div>
                     </RadioGroup>
-
                     {/* Choose selection order */}
                     <div className="flex justify-start gap-2 align-middle">
                         <Label className="font-medium">Selection:</Label>
@@ -166,37 +163,6 @@ export function CurrentInstance() {
                             />
                         </Popover>
                     </div>
-
-                    {/** Choose placement routine */}
-                    {algo === Algo.GREEDY && (
-                        <div className="flex justify-start gap-2 align-middle">
-                            <Label className="font-medium">Placement:</Label>
-                            <Popover
-                                open={openPlacement}
-                                onOpenChange={setOpenPlacement}
-                            >
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="secondary"
-                                        role="combobox"
-                                        aria-expanded={openPlacement}
-                                        className="w-20 justify-between mt-2"
-                                    >
-                                        {placement}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopOverOptions
-                                    options={PlacementOption}
-                                    option={placement}
-                                    onSelectOption={(val) => {
-                                        setPlacement(val);
-                                        setOpenPlacement(false);
-                                    }}
-                                />
-                            </Popover>
-                        </div>
-                    )}
 
                     {/** Choose neighborhood */}
                     {algo === Algo.LOCAL && (
@@ -230,6 +196,44 @@ export function CurrentInstance() {
                                     />
                                 </Popover>
                             </div>
+                        </div>
+                    )}
+
+                    {/** Choose placement routine */}
+                    {(algo === Algo.GREEDY ||
+                        neighborhood === NeighborhoodOption.PERMUTATION) && (
+                        <div className="flex justify-start gap-2 align-middle">
+                            <Label className="font-medium">Placement:</Label>
+                            <Popover
+                                open={openPlacement}
+                                onOpenChange={setOpenPlacement}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="secondary"
+                                        role="combobox"
+                                        aria-expanded={openPlacement}
+                                        className="w-20 justify-between mt-2"
+                                    >
+                                        {placement}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopOverOptions
+                                    options={PlacementOption}
+                                    option={placement}
+                                    onSelectOption={(val) => {
+                                        setPlacement(val);
+                                        setOpenPlacement(false);
+                                    }}
+                                />
+                            </Popover>
+                        </div>
+                    )}
+
+                    {/** Input num neighbors & max iterations */}
+                    {algo === Algo.LOCAL && (
+                        <div className="grid w-full gap-2 text-left mt-3 mb-3">
                             <InputField
                                 typeInput="number"
                                 value={numNeighbors}
@@ -242,17 +246,30 @@ export function CurrentInstance() {
                                 setValueFunc={setMaxIters}
                                 label="Max iterations 🕓"
                             />
-                            <div className="text-xs text-gray-400">
-                                Local search will try to eliminate low util.
-                                shelves using <strong>Bottom Left</strong> from
-                                initial <strong>SFF</strong> solution.
-                            </div>
+                            {neighborhood === NeighborhoodOption.GEOMETRY && (
+                                <div className="text-xs text-gray-400">
+                                    Local search with Geometry neighborhood will
+                                    try to relocate rectangles from low util
+                                    boxes using <strong>Bottom Left</strong>{" "}
+                                    from an initial <strong>SFF</strong>{" "}
+                                    solution.
+                                </div>
+                            )}
+                            {neighborhood ===
+                                NeighborhoodOption.PERMUTATION && (
+                                <div className="text-xs text-gray-400">
+                                    Local search with Permutation neighborhood
+                                    will try to change selection input order and
+                                    repack using <strong>SBAF</strong> placement
+                                    routine.
+                                </div>
+                            )}
                         </div>
                     )}
+
                     {error && (
                         <div className="text-xs text-red-500 mt-2">{error}</div>
                     )}
-
                     <Button
                         className={`mt-2 ${isLoadingSolve ? "opacity-50" : "opacity-100"}`}
                         variant="default"

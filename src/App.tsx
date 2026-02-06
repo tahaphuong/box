@@ -15,23 +15,30 @@ function App() {
 
     return (
         <MainContext.Provider
-            value={{ instance, setInstance, solution, setSolution, stats, setStats }}
+            value={{
+                instance,
+                setInstance,
+                solution,
+                setSolution,
+                stats,
+                setStats,
+            }}
         >
             <div className="h-full text-left">
-                <div className="text-4xl font-bold mt-4 mb-4">
+                <div className="text-4xl font-bold mt-6 mb-4">
                     2D Bin Packing solver
                 </div>
-                <div className="mb-2">
+                <div className="mb-1">
                     Given a set of rectangles and a fixed box size, place all
                     rectangles without overlap into the smallest possible number
                     of square boxes. Rectangles may be rotated and must fit
-                    entirely within a box. This problem can be solved with{" "}
+                    entirely within a box. This problem is solved with{" "}
+                    <strong>greedy heuristics</strong> or{" "}
                     <strong>local search</strong> methods with different
-                    neighborhoods or <strong>greedy heuristics</strong>.
+                    neighborhoods.
                 </div>
                 <div className="font-normal text-sm text-gray-400">
-                    (The latest instance, including its generation settings and
-                    results, is saved in local storage)
+                    (Threshold for descent run time is ~1000 boxes.)
                 </div>
 
                 {/** 3 components, Input, Current Instance settings, and Playground */}

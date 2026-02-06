@@ -16,9 +16,8 @@ export class BottomLeftFirstFit implements GreedyPlacement<
     }
 
     moveDown(x: number, width: number, rectangles: Rectangle[]): number {
-        let targetY = 0; // Default to the very bottom
+        let targetY = 0;
         for (const rect of rectangles) {
-            // overlap in X with candidate
             if (rect.x < x + width && rect.x + rect.getWidth > x) {
                 targetY = Math.max(targetY, rect.y + rect.getHeight);
             }
@@ -26,35 +25,25 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         return targetY;
     }
 
-    moveLeft(y: number, height: number, rectangles: Rectangle[]): number {
-        let targetX = 0; // Default to the very left
+    moveLeft(
+        y: number,
+        height: number,
+        width: number,
+        rectangles: Rectangle[],
+    ): number {
+        let targetX = 0;
         for (const rect of rectangles) {
-            // overlap in Y with candidate
             if (rect.y < y + height && rect.y + rect.getHeight > y) {
                 targetX = Math.max(targetX, rect.x + rect.getWidth);
+
+                // check overlap here directly
+                const xOverlap =
+                    targetX < rect.x + rect.getWidth &&
+                    targetX + width > rect.x;
+                if (xOverlap) break;
             }
         }
         return targetX;
-    }
-
-    noOverlap(
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        rects: Rectangle[],
-    ): boolean {
-        for (const r of rects) {
-            if (
-                x < r.x + r.getWidth &&
-                x + width > r.x &&
-                y < r.y + r.getHeight &&
-                y + height > r.y
-            ) {
-                return false;
-            }
-        }
-        return true;
     }
 
     findPosition(item: Rectangle, solution: Solution): Position | null {
@@ -100,29 +89,15 @@ export class BottomLeftFirstFit implements GreedyPlacement<
 
                     // bottom-left projection using locals
                     cy = this.moveDown(cx, candidateWidth, boxRects);
-                    cx = this.moveLeft(cy, candidateHeight, boxRects);
-
-                    // bounds check
-                    if (
-                        cx < 0 ||
-                        cy < 0 ||
-                        cx + candidateWidth > solution.L ||
-                        cy + candidateHeight > solution.L
-                    ) {
-                        continue;
-                    }
-
-                    // overlap check
-                    if (
-                        !this.noOverlap(
-                            cx,
-                            cy,
-                            candidateWidth,
-                            candidateHeight,
-                            boxRects,
-                        )
-                    )
-                        continue;
+                    if (cy < 0 || cy + candidateHeight > solution.L) continue;
+                    cx = this.moveLeft(
+                        cy,
+                        candidateHeight,
+                        candidateWidth,
+                        boxRects,
+                    );
+                    // final bounds check
+                    if (cx < 0 || cx + candidateWidth > solution.L) continue;
 
                     // bottom-most, then left-most
                     if (!found || cy < bestY || (cy === bestY && cx < bestX)) {
