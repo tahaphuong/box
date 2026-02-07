@@ -30,6 +30,7 @@ export function handleSolveBinPacking(
 
     numNeighbors: number,
     maxIters: number,
+    randomRate: number,
 ): [Solution, SolutionStats] {
     const start = performance.now();
     const selection = createSelectionBinPack(
@@ -61,7 +62,6 @@ export function handleSolveBinPacking(
         case Algo.LOCAL: {
             // init solution with SFF. Improve with either SBAF or BL (or SFF it self)
             // Note: If init with BL -> can only improve with BL or stateless placements
-
             if (neighborhoodOpt == NeighborhoodOption.GEOMETRY) {
                 const initialPlacement = createPlacementBinPack(
                     PlacementOption.SHELF_FIRST_FIT,
@@ -69,29 +69,28 @@ export function handleSolveBinPacking(
                 const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
                 solution = greedyAlgo.solve(solution);
                 placement.copyPlacementState(initialPlacement);
+
+                // Init solution with a given placement
             } else if (neighborhoodOpt == NeighborhoodOption.PERMUTATION) {
                 const greedyAlgo = new GreedyAlgo(selection, placement);
                 solution = greedyAlgo.solve(solution);
             }
 
-            // then improve
+            const objective = new UltilizationBox();
+            // print score before local search
+            stats.numBox = solution.idToBox.size;
+            stats.score = objective.score(solution);
+
+            // Init local search
             const strategy = new HillClimbingStrategy<Solution>();
             const terminate = iterAndStagnated(maxIters, 10, 0.95); // max iter, stagnation threshold, stagnation ratio
-            const objective = new UltilizationBox();
-
-            // (shallow) copy initial placement state (SFF)
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
                 placement,
                 selection,
-                0.2, // random rate of selecting neighbors
+                randomRate,
             );
-
-            // print score
-            stats.numBox = solution.idToBox.size;
-            stats.score = objective.score(solution);
-
             const algo = new LocalSearchAlgo(
                 strategy,
                 terminate,
@@ -100,14 +99,12 @@ export function handleSolveBinPacking(
             );
             solution = algo.solve(solution);
 
-            // print score
+            // print score after local search
             const finalScore = objective.score(solution);
             stats.numBoxImproved = stats.numBox - solution.idToBox.size;
             stats.scoreImproved = Math.abs(stats.score - finalScore);
-
             stats.numBox = solution.idToBox.size;
             stats.score = finalScore;
-
             break;
         }
     }

@@ -10,32 +10,25 @@ export abstract class GreedySelection<Item> {
         this.preProcess();
     }
     abstract preProcess(): void;
-    abstract getNextItem(): Item | null;
+
+    getNextItem(): Item | null {
+        if (this.index == this.items.length) {
+            return null;
+        }
+        this.index += 1;
+        return this.items[this.index - 1];
+    }
 }
 
 export class LargestAreaFirst extends GreedySelection<Rectangle> {
     preProcess(): void {
         this.items.sort((a, b) => b.area - a.area);
     }
-    getNextItem(): Rectangle | null {
-        if (this.index == this.items.length) {
-            return null;
-        }
-        this.index += 1;
-        return this.items[this.index - 1];
-    }
 }
 
 export class LongestSideFirst extends GreedySelection<Rectangle> {
     preProcess(): void {
         this.items.sort((a, b) => b.largerSide - a.largerSide);
-    }
-    getNextItem(): Rectangle | null {
-        if (this.index == this.items.length) {
-            return null;
-        }
-        this.index += 1;
-        return this.items[this.index - 1];
     }
 }
 

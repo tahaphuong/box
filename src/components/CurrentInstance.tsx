@@ -19,9 +19,11 @@ import { PopOverOptions } from "@/components/ui/pop-over-options";
 import { TableRectangles } from "@/components/ui/table-rectangles";
 
 import { MainContext } from "@/context/MainContext";
+import { Instance } from "@/models/binpacking";
 
 export function CurrentInstance() {
     const [numNeighbors, setNumNeighbors] = useState<string>("10");
+    const [randomRate, setRandomRate] = useState<string>("0.2");
     const [maxIters, setMaxIters] = useState<string>("50");
 
     const [algo, setAlgo] = useState<string>(Algo.GREEDY);
@@ -39,10 +41,13 @@ export function CurrentInstance() {
     const [openNeighborhood, setOpenNeighborhood] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
 
-    const { instance, setSolution, setStats } = useContext(MainContext) ?? {
+    const { instance, setSolution, setStats, setInstance } = useContext(
+        MainContext,
+    ) ?? {
         instance: null,
         setSolution: null,
         setStats: null,
+        setInstance: null,
     };
 
     const isScrollable: boolean = !instance
@@ -65,9 +70,17 @@ export function CurrentInstance() {
             placement,
             Number(numNeighbors),
             Number(maxIters),
+            Number(randomRate),
         );
         if (setSolution) {
             setSolution(solution);
+        }
+        if (setInstance) {
+            const items = [...solution.idToBox.values()]
+                .flatMap((box) => box.rectangles)
+                .sort((a, b) => a.id - b.id);
+            const newInstance = new Instance(instance.L, items);
+            setInstance(newInstance);
         }
         if (setStats) setStats(stats);
     };
@@ -241,24 +254,28 @@ export function CurrentInstance() {
                             />
                             <InputField
                                 typeInput="number"
+                                value={randomRate}
+                                setValueFunc={setRandomRate}
+                                label="Neighbor random rate 🔢"
+                            />
+                            <InputField
+                                typeInput="number"
                                 value={maxIters}
                                 setValueFunc={setMaxIters}
                                 label="Max iterations 🕓"
                             />
                             {neighborhood === NeighborhoodOption.GEOMETRY && (
                                 <div className="text-xs text-gray-400">
-                                    Local search with Geometry neighborhood will
-                                    try to relocate rectangles from low util
-                                    boxes from an initial{" "}
-                                    <strong>Shelf First Fit</strong> solution
+                                    Relocate rectangles from low util boxes,
+                                    from a <strong>Shelf First Fit</strong>{" "}
+                                    solution
                                 </div>
                             )}
                             {neighborhood ===
                                 NeighborhoodOption.PERMUTATION && (
                                 <div className="text-xs text-gray-400">
-                                    Local search with Permutation neighborhood
-                                    will try to change selection input order and
-                                    repack from an initial solution. routine.
+                                    Change input order and repack from an
+                                    initial Greedy solution.
                                 </div>
                             )}
                         </div>

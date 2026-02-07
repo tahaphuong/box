@@ -2,6 +2,7 @@ import { type GreedyPlacement } from "./GreedyPlacement";
 import { Solution, type Rectangle, type Position } from "@/models/binpacking";
 // import { create, castDraft } from "mutative";
 
+// Improved bottom left
 export class BottomLeftFirstFit implements GreedyPlacement<
     Rectangle,
     Solution
@@ -23,6 +24,7 @@ export class BottomLeftFirstFit implements GreedyPlacement<
     }
 
     moveDown(x: number, width: number, rectangles: Rectangle[]): number {
+        // min to the bottom
         let targetY = 0;
         for (const rect of rectangles) {
             if (rect.x < x + width && rect.x + rect.getWidth > x) {
@@ -32,95 +34,107 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         return targetY;
     }
 
-    moveLeft(
-        y: number,
-        height: number,
-        width: number,
-        rectangles: Rectangle[],
-    ): number {
+    moveLeft(y: number, height: number, rectangles: Rectangle[]): number {
+        // min to the left
         let targetX = 0;
         for (const rect of rectangles) {
             if (rect.y < y + height && rect.y + rect.getHeight > y) {
                 targetX = Math.max(targetX, rect.x + rect.getWidth);
-                const xOverlap =
-                    targetX < rect.x + rect.getWidth &&
-                    targetX + width > rect.x;
-                if (xOverlap) break;
             }
         }
         return targetX;
+    }
+
+    // isOverlapped(
+    //     x: number,
+    //     y: number,
+    //     width: number,
+    //     height: number,
+    //     rectangles: Rectangle[],
+    // ): boolean {
+    //     for (const rect of rectangles) {
+    //         if (rect.x < x + width && rect.x + rect.getWidth > x) {
+    //             // x overlap
+    //             if (rect.y < y + height && rect.y + rect.getHeight > y) {
+    //                 // y overlap
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //     return false;
+    // }
+
+    isOverflown(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        boxL: number,
+    ): boolean {
+        return x + width > boxL || y + height > boxL;
     }
 
     findPosition(item: Rectangle, solution: Solution): Position | null {
         for (const box of solution.idToBox.values()) {
             if (box.areaLeft < item.area) continue;
 
-            let bestX = Infinity;
-            let bestY = Infinity;
-            let bestSideway = item.isSideway;
+            let globalX = Infinity;
+            let globalY = Infinity;
+            let globalSideway = item.isSideway;
             let found = false;
 
-            const originalSideway = item.isSideway;
+            const boxRects = box.rectangles;
 
-            for (let r = 0; r < 2; r++) {
-                const candidateSideway =
-                    r === 1 ? !originalSideway : originalSideway;
+            for (const sideway of [true, false]) {
+                const width = sideway ? item.largerSide : item.smallerSide;
+                const height = sideway ? item.smallerSide : item.largerSide;
 
-                // compute candidate width/height without mutating item
-                const candidateWidth = candidateSideway
-                    ? item.largerSide
-                    : item.smallerSide;
-                const candidateHeight = candidateSideway
-                    ? item.smallerSide
-                    : item.largerSide;
+                let bestX = box.L - width;
+                let bestY = box.L - height;
 
-                const candidates: Array<{ x: number; y: number }> = [
-                    { x: 0, y: 0 },
-                ];
+                let x = bestX;
+                let y = bestY;
 
-                const boxRects = box.rectangles;
+                // prune if overflow
+                let moved = false;
+                do {
+                    moved = false;
+                    const newY = this.moveDown(x, width, boxRects);
+                    if (newY < y) {
+                        y = newY;
+                        moved = true;
+                    }
+                    const newX = this.moveLeft(y, height, boxRects);
+                    if (newX < x) {
+                        x = newX;
+                        moved = true;
+                    }
+                } while (moved);
 
-                for (const rect of boxRects) {
-                    candidates.push(
-                        { x: rect.x + rect.getWidth, y: rect.y },
-                        { x: rect.x, y: rect.y + rect.getHeight },
-                    );
-                }
+                if (this.isOverflown(x, y, width, height, box.L)) continue;
 
-                for (const c of candidates) {
-                    // start at candidate
-                    let cx = c.x;
-                    let cy = c.y;
+                if (y < bestY || (y === bestY && x < bestX)) {
+                    bestX = x;
+                    bestY = y;
+                    found = true;
 
-                    // bottom-left projection using locals
-                    cy = this.moveDown(cx, candidateWidth, boxRects);
-                    if (cy < 0 || cy + candidateHeight > solution.L) continue;
-                    cx = this.moveLeft(
-                        cy,
-                        candidateHeight,
-                        candidateWidth,
-                        boxRects,
-                    );
-                    // final bounds check
-                    if (cx < 0 || cx + candidateWidth > solution.L) continue;
-
-                    // bottom-most, then left-most
-                    if (!found || cy < bestY || (cy === bestY && cx < bestX)) {
-                        bestX = cx;
-                        bestY = cy;
-                        bestSideway = candidateSideway;
-                        found = true;
+                    if (
+                        bestY < globalY ||
+                        (bestY === globalY && bestX < globalX)
+                    ) {
+                        globalX = bestX;
+                        globalY = bestY;
+                        globalSideway = sideway;
                     }
                 }
             }
 
-            // item remains unchanged here
             if (found) {
                 return {
                     boxId: box.id,
-                    x: bestX,
-                    y: bestY,
-                    isSideway: bestSideway,
+                    x: globalX,
+                    y: globalY,
+                    isSideway: globalSideway,
                 };
             }
         }
