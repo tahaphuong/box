@@ -45,25 +45,6 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         return targetX;
     }
 
-    // isOverlapped(
-    //     x: number,
-    //     y: number,
-    //     width: number,
-    //     height: number,
-    //     rectangles: Rectangle[],
-    // ): boolean {
-    //     for (const rect of rectangles) {
-    //         if (rect.x < x + width && rect.x + rect.getWidth > x) {
-    //             // x overlap
-    //             if (rect.y < y + height && rect.y + rect.getHeight > y) {
-    //                 // y overlap
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //     return false;
-    // }
-
     isOverflown(
         x: number,
         y: number,
@@ -86,8 +67,8 @@ export class BottomLeftFirstFit implements GreedyPlacement<
             const boxRects = box.rectangles;
 
             for (const sideway of [true, false]) {
-                const width = sideway ? item.largerSide : item.smallerSide;
-                const height = sideway ? item.smallerSide : item.largerSide;
+                const width = item.getWidthWith(sideway);
+                const height = item.getHeightWith(sideway);
 
                 let bestX = box.L - width;
                 let bestY = box.L - height;

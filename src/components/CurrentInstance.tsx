@@ -150,34 +150,6 @@ export function CurrentInstance() {
                             style={{ display: "none" }}
                         ></div>
                     </RadioGroup>
-                    {/* Choose selection order */}
-                    <div className="flex justify-start gap-2 align-middle">
-                        <Label className="font-medium">Selection:</Label>
-                        <Popover
-                            open={openSelection}
-                            onOpenChange={setOpenSelection}
-                        >
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="secondary"
-                                    role="combobox"
-                                    aria-expanded={openSelection}
-                                    className="w-35 justify-between mt-2"
-                                >
-                                    {selection}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopOverOptions
-                                options={SelectionOption}
-                                option={selection}
-                                onSelectOption={(val) => {
-                                    setSelection(val);
-                                    setOpenSelection(false);
-                                }}
-                            />
-                        </Popover>
-                    </div>
 
                     {/** Choose neighborhood */}
                     {algo === Algo.LOCAL && (
@@ -214,34 +186,69 @@ export function CurrentInstance() {
                         </div>
                     )}
 
+                    {/* Choose selection order */}
+                    {(algo === Algo.GREEDY ||
+                        neighborhood !== NeighborhoodOption.OVERLAP) && (
+                        <div className="flex justify-start gap-2 align-middle">
+                            <Label className="font-medium">Selection:</Label>
+                            <Popover
+                                open={openSelection}
+                                onOpenChange={setOpenSelection}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="secondary"
+                                        role="combobox"
+                                        aria-expanded={openSelection}
+                                        className="w-35 justify-between mt-2"
+                                    >
+                                        {selection}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopOverOptions
+                                    options={SelectionOption}
+                                    option={selection}
+                                    onSelectOption={(val) => {
+                                        setSelection(val);
+                                        setOpenSelection(false);
+                                    }}
+                                />
+                            </Popover>
+                        </div>
+                    )}
+
                     {/** Choose placement routine */}
-                    <div className="flex justify-start gap-2 align-middle">
-                        <Label className="font-medium">Placement:</Label>
-                        <Popover
-                            open={openPlacement}
-                            onOpenChange={setOpenPlacement}
-                        >
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="secondary"
-                                    role="combobox"
-                                    aria-expanded={openPlacement}
-                                    className="w-20 justify-between mt-2"
-                                >
-                                    {placement}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopOverOptions
-                                options={PlacementOption}
-                                option={placement}
-                                onSelectOption={(val) => {
-                                    setPlacement(val);
-                                    setOpenPlacement(false);
-                                }}
-                            />
-                        </Popover>
-                    </div>
+                    {(algo === Algo.GREEDY ||
+                        neighborhood !== NeighborhoodOption.OVERLAP) && (
+                        <div className="flex justify-start gap-2 align-middle">
+                            <Label className="font-medium">Placement:</Label>
+                            <Popover
+                                open={openPlacement}
+                                onOpenChange={setOpenPlacement}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="secondary"
+                                        role="combobox"
+                                        aria-expanded={openPlacement}
+                                        className="w-20 justify-between mt-2"
+                                    >
+                                        {placement}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopOverOptions
+                                    options={PlacementOption}
+                                    option={placement}
+                                    onSelectOption={(val) => {
+                                        setPlacement(val);
+                                        setOpenPlacement(false);
+                                    }}
+                                />
+                            </Popover>
+                        </div>
+                    )}
 
                     {/** Input num neighbors & max iterations */}
                     {algo === Algo.LOCAL && (
@@ -252,18 +259,21 @@ export function CurrentInstance() {
                                 setValueFunc={setNumNeighbors}
                                 label="Number neighbors 👩"
                             />
-                            <InputField
-                                typeInput="number"
-                                value={randomRate}
-                                setValueFunc={setRandomRate}
-                                label="Neighbor random rate 🔢"
-                            />
+                            {neighborhood !== NeighborhoodOption.OVERLAP && (
+                                <InputField
+                                    typeInput="number"
+                                    value={randomRate}
+                                    setValueFunc={setRandomRate}
+                                    label="Neighbor random rate 🔢"
+                                />
+                            )}
                             <InputField
                                 typeInput="number"
                                 value={maxIters}
                                 setValueFunc={setMaxIters}
                                 label="Max iterations 🕓"
                             />
+
                             {neighborhood === NeighborhoodOption.GEOMETRY && (
                                 <div className="text-xs text-gray-400">
                                     Relocate rectangles from low util boxes,
@@ -276,6 +286,12 @@ export function CurrentInstance() {
                                 <div className="text-xs text-gray-400">
                                     Change input order and repack from an
                                     initial Greedy solution.
+                                </div>
+                            )}
+                            {neighborhood === NeighborhoodOption.OVERLAP && (
+                                <div className="text-xs text-gray-400">
+                                    Start with an overlapping solution and try
+                                    to "push" overlaps away
                                 </div>
                             )}
                         </div>

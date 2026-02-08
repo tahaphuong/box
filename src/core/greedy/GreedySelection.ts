@@ -32,6 +32,10 @@ export class LongestSideFirst extends GreedySelection<Rectangle> {
     }
 }
 
+export class OriginalSelection extends GreedySelection<Rectangle> {
+    preProcess(): void {}
+}
+
 // Greedy Selection handler
 export function createSelectionBinPack(
     option: SelectionOptionType = SelectionOption.LONGEST,

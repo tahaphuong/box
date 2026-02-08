@@ -2,8 +2,7 @@ import { Rectangle, Box } from "@/models/binpacking";
 import { Solution } from "@/models/binpacking";
 import { type GreedyPlacement } from "@/core/greedy";
 import { type Neighborhood } from "./Neighborhood";
-import { getBoxesToUnpack } from "./helpers";
-
+import { getBoxesToUnpack } from "@/core/local_search/helpers";
 /**
  * Unpack least util box and try to move them elsewhere
  * in the current placement

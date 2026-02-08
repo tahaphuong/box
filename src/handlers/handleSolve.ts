@@ -7,6 +7,7 @@ import type {
 import { Algo, NeighborhoodOption, PlacementOption } from "@/models";
 import {
     GreedyAlgo,
+    OriginalSelection,
     createPlacementBinPack,
     createSelectionBinPack,
 } from "@/core/greedy";
@@ -14,9 +15,14 @@ import {
     LocalSearchAlgo,
     createNeighborhoodBinPack,
     UltilizationBox,
+    PackingPenaltyObjective,
     iterAndStagnated,
+    maxIterations,
     HillClimbingStrategy,
 } from "@/core/local_search";
+import { RandomOverlapPlacement } from "@/core/greedy/placement/RandomOverlapPlacement";
+import { SimulatedAnnealingStrategy } from "@/core/local_search/LocalSearchStrategy";
+
 /**
  * Use Algo here based on user input
  */
@@ -62,34 +68,74 @@ export function handleSolveBinPacking(
         case Algo.LOCAL: {
             // init solution with SFF. Improve with either SBAF or BL (or SFF it self)
             // Note: If init with BL -> can only improve with BL or stateless placements
-            if (neighborhoodOpt == NeighborhoodOption.GEOMETRY) {
-                const initialPlacement = createPlacementBinPack(
-                    PlacementOption.SHELF_FIRST_FIT,
-                );
-                const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
-                solution = greedyAlgo.solve(solution);
-                placement.copyPlacementState(initialPlacement);
 
-                // Init solution with a given placement
-            } else if (neighborhoodOpt == NeighborhoodOption.PERMUTATION) {
-                const greedyAlgo = new GreedyAlgo(selection, placement);
-                solution = greedyAlgo.solve(solution);
+            // init solution
+            let objective = new UltilizationBox();
+            let terminate = iterAndStagnated(maxIters, 10, 0.95); // max iter, stagnation threshold, stagnation ratio
+            let strategy = new HillClimbingStrategy<Solution>();
+
+            switch (neighborhoodOpt) {
+                case NeighborhoodOption.GEOMETRY: {
+                    const initialPlacement = createPlacementBinPack(
+                        PlacementOption.SHELF_FIRST_FIT,
+                    );
+                    const greedyAlgo = new GreedyAlgo(
+                        selection,
+                        initialPlacement,
+                    );
+                    solution = greedyAlgo.solve(solution);
+                    placement.copyPlacementState(initialPlacement);
+                    break;
+                }
+
+                case NeighborhoodOption.PERMUTATION: {
+                    const greedyAlgo = new GreedyAlgo(selection, placement);
+                    solution = greedyAlgo.solve(solution);
+                    break;
+                }
+                case NeighborhoodOption.OVERLAP: {
+                    // generate best feasible number of boxes and pack rectangles in random positions
+                    const originalSelection = new OriginalSelection([
+                        ...instance.rectangles,
+                    ]);
+                    const randomPlacement = new RandomOverlapPlacement();
+                    const allRectsArea = instance.rectangles.reduce(
+                        (acc, rect) => acc + rect.area,
+                        0,
+                    );
+                    const greedyAlgo = new GreedyAlgo(
+                        originalSelection,
+                        randomPlacement,
+                    );
+
+                    const minNumBoxes = Math.ceil(
+                        allRectsArea / solution.L ** 2,
+                    );
+                    for (let i = 0; i < minNumBoxes; i++) {
+                        solution.addNewBox();
+                    }
+                    terminate = maxIterations(maxIters);
+                    objective = new PackingPenaltyObjective(maxIters);
+                    strategy = new SimulatedAnnealingStrategy<Solution>({
+                        maxIter: maxIters,
+                    });
+                    solution = greedyAlgo.solve(solution);
+                    break;
+                }
             }
 
-            const objective = new UltilizationBox();
             // print score before local search
             stats.numBox = solution.idToBox.size;
             stats.score = objective.score(solution);
 
             // Init local search
-            const strategy = new HillClimbingStrategy<Solution>();
-            const terminate = iterAndStagnated(maxIters, 10, 0.95); // max iter, stagnation threshold, stagnation ratio
             const neighborhood = createNeighborhoodBinPack(
                 neighborhoodOpt as NeighborhoodOptionType,
                 numNeighbors,
                 placement,
                 selection,
                 randomRate,
+                maxIters,
             );
             const algo = new LocalSearchAlgo(
                 strategy,

@@ -3,13 +3,15 @@ import {
     AlgoSolution,
     NeighborhoodOption,
 } from "@/models";
-import { GeometryNeighborhood } from "./Geometry";
 import { Rectangle, Solution } from "@/models/binpacking";
+import { GeometryNeighborhood } from "./Geometry";
 import { PermutationNeighborhood } from "./Permutation";
+import { OverlapNeighborhood } from "./Overlap";
 import { type GreedyPlacement, GreedySelection } from "@/core/greedy";
+import type { Stats } from "@/core/local_search/Stats";
 
 export interface Neighborhood<SOL extends AlgoSolution> {
-    getNeighbors(solution: SOL): SOL[];
+    getNeighbors(solution: SOL, stats?: Stats): SOL[];
 }
 
 export function createNeighborhoodBinPack(
@@ -18,6 +20,7 @@ export function createNeighborhoodBinPack(
     placement: GreedyPlacement<Rectangle, Solution>,
     selection: GreedySelection<Rectangle>,
     randomRate: number = 0,
+    maxIters: number,
 ) {
     switch (option) {
         case NeighborhoodOption.GEOMETRY:
@@ -36,6 +39,11 @@ export function createNeighborhoodBinPack(
                 selection,
             );
         case NeighborhoodOption.OVERLAP:
+            return new OverlapNeighborhood(
+                numNeighbors,
+                selection.items.length,
+                maxIters,
+            );
         default: {
             return new GeometryNeighborhood(
                 numNeighbors,

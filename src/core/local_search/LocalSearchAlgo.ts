@@ -33,7 +33,10 @@ export class LocalSearchAlgo<
         };
         let currentSolution = solution;
         while (!this.terminate(stats)) {
-            const neighbors = this.neighborhood.getNeighbors(currentSolution);
+            const neighbors = this.neighborhood.getNeighbors(
+                currentSolution,
+                stats,
+            );
             const [nextNb, nextNbScore] = this.strategy.pickNext(
                 neighbors,
                 stats,

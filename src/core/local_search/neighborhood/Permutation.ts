@@ -5,22 +5,15 @@ import {
     GreedyAlgo,
     type GreedyPlacement,
     GreedySelection,
+    OriginalSelection,
 } from "@/core/greedy";
-import { getBoxesToUnpack } from "./helpers";
+import { getBoxesToUnpack } from "@/core/local_search/helpers";
 
 /**
  * Reorganize packing order
  * Pack the rectangles of less util box ("clear 1 box") and put them first in the packing order
  * At rate `randomRate`=0.2 i.e. 20% of the neighbors are randomly chosen boxes and not from less util
  */
-
-class PermutationSelection extends GreedySelection<Rectangle> {
-    constructor(items: Rectangle[]) {
-        super(items);
-    }
-    preProcess(): void {}
-}
-
 export class PermutationNeighborhood implements Neighborhood<Solution> {
     // refer to current box
     readonly totalRectangles: number;
@@ -104,7 +97,7 @@ export class PermutationNeighborhood implements Neighborhood<Solution> {
             const cloned = this.selection.items.map((item) => item.cloneNew());
             const pulled = box.rectangles.map((item) => item.cloneNew());
             const orderedItems = this.pullRects(cloned, pulled);
-            const newSelection = new PermutationSelection(orderedItems);
+            const newSelection = new OriginalSelection(orderedItems);
 
             const greedyAlgo = new GreedyAlgo(newSelection, this.placement);
             let neighbor = new Solution(currentSol.L);

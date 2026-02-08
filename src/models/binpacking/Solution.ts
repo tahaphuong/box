@@ -89,6 +89,6 @@ export class Solution extends AlgoSolution {
                 `Remove rect ${rect.id} failed: Box ${rect.boxId} is not in solution`,
             );
         rect.boxId = -1;
-        box.removeRectangle(rect);
+        box.removeRectangle(rect.id);
     }
 }

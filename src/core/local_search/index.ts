@@ -9,7 +9,11 @@ export {
     maxIterations,
     iterAndStagnated,
 } from "./Termination";
-export { type ObjectiveFunction, UltilizationBox } from "./Objective";
+export {
+    type ObjectiveFunction,
+    UltilizationBox,
+    PackingPenaltyObjective,
+} from "./Objective";
 export {
     type LocalSearchStrategy,
     HillClimbingStrategy,

@@ -14,7 +14,6 @@ export interface GreedyPlacement<Item, SOL extends AlgoSolution> {
         solution: SOL,
         indicatedPos: Position | null,
     ): boolean;
-    // removeItem(item: Item, solution: SOL): boolean;
     removeBox(boxId: number): void;
     clone(
         updateFn?: (draft: GreedyPlacement<Item, SOL>) => void,

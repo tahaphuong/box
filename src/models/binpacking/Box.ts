@@ -26,11 +26,13 @@ export class Box {
         this.fillArea += rect.area;
     }
 
-    removeRectangle(rect: Rectangle): void {
-        const i = this.rectangles.findIndex((r) => r.id === rect.id);
-        if (i !== -1) this.rectangles.splice(i, 1);
-        this.fillArea -= rect.area;
-        rect.reset();
+    removeRectangle(rectId: number): void {
+        const i = this.rectangles.findIndex((r) => r.id === rectId);
+        if (i !== -1) {
+            const rect = this.rectangles.splice(i, 1)[0];
+            this.fillArea -= rect.area;
+            rect.reset();
+        }
     }
 
     get fillRatio(): number {

@@ -18,11 +18,12 @@ export class GreedyAlgo<
     }
 
     solve(solution: SOL): SOL {
+        const newSol = solution;
         let item = this.selection.getNextItem();
         while (item) {
-            this.placement.checkThenAdd(item, solution, null);
+            this.placement.checkThenAdd(item, newSol, null);
             item = this.selection.getNextItem();
         }
-        return solution;
+        return newSol;
     }
 }
