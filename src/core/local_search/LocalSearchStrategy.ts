@@ -80,8 +80,7 @@ export class SimulatedAnnealingStrategy<
 
         // Linear cooling
         const t = Math.min(stats.iteration + 1, this.maxIter);
-        this.temperature =
-            this.TStart - (this.TStart - this.TEnd) * (t / this.maxIter);
+        this.temperature = this.TStart / Math.log(t + 2);
 
         const currentScore = stats.bestScore;
 

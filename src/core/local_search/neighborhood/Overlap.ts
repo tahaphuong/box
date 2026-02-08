@@ -64,7 +64,6 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
                 rectToMove.x = 0;
                 rectToMove.y = 0;
                 draftSol.addRectangle(rectToMove, box.id);
-                console.log("Moved to empty box");
                 return true;
             }
         }
@@ -81,7 +80,6 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
             [d1.y, d2.y] = [d2.y, d1.y];
             return false;
         }
-        console.log("Local swap rect");
         return true;
     }
 
@@ -97,7 +95,6 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
             d.y = oldY;
             return false;
         }
-        console.log("Local move rect");
         return true;
     }
 
@@ -125,7 +122,6 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
             d.y = oldY;
             return false;
         }
-        console.log("Local push rect");
         return true;
     }
 
@@ -136,10 +132,9 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
         if (!targetBox || targetBox.id === rect.boxId) return false;
 
         sol.removeRectangle(rect);
-        rect.x = 0;
-        rect.y = 0;
+        // rect.x = 0; // TODO: check this again
+        // rect.y = 0;
         sol.addRectangle(rect, targetBox.id);
-        console.log("Move to random box");
         return true;
     }
 
@@ -155,7 +150,6 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
             return false;
         }
 
-        console.log("Rotate rect");
         return true;
     }
 
@@ -196,11 +190,11 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
                     const L = currentBox.L;
 
                     // TODO: Implement the logic for the remaining cases
-                    if (p < 0.3) {
+                    if (p < 0.2) {
                         moved = this.rotateRect(L, d1, d2);
                         if (moved) return;
                     }
-                    if (p < 0.65) {
+                    if (p < 0.6) {
                         // Random local move
                         const pick = Math.random() < 0.5 ? d1 : d2;
                         moved = this.moveRect(pick, L, step);
@@ -249,6 +243,8 @@ export class OverlapNeighborhood implements Neighborhood<Solution> {
             });
             if (neighbor) neighbors.push(neighbor);
         }
+
+        // TODO: Implement Finalization (-> to non-overlapping solution)
         return neighbors;
     }
 }

@@ -115,7 +115,7 @@ export function handleSolveBinPacking(
                         solution.addNewBox();
                     }
                     terminate = maxIterations(maxIters);
-                    objective = new PackingPenaltyObjective(maxIters);
+                    objective = new PackingPenaltyObjective(0, maxIters);
                     strategy = new SimulatedAnnealingStrategy<Solution>({
                         maxIter: maxIters,
                     });

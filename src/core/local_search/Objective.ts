@@ -41,10 +41,10 @@ export class PackingPenaltyObjective implements ObjectiveFunction<Solution> {
     }
 
     // Optional helper to update iteration externally
-    setIteration(curIter: number, maxIter?: number) {
-        this.curIter = curIter;
-        if (maxIter !== undefined) this.maxIter = maxIter;
-    }
+    // setIteration(curIter: number, maxIter?: number) {
+    //     this.curIter = curIter;
+    //     if (maxIter !== undefined) this.maxIter = maxIter;
+    // }
 
     score(sol: Solution): number {
         const progress = this.curIter / this.maxIter; // run from 0 to 1
