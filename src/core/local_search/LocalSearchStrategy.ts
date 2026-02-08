@@ -97,8 +97,8 @@ export class SimulatedAnnealingStrategy<
                 delta = delta / Math.max(Math.abs(currentScore), 1e-6); // scale
                 prob = Math.exp(-delta / this.temperature);
             }
-
-            console.log("Delta:", delta, "T:", this.temperature, "Prob:", prob);
+            // TODO: Check cooling again
+            // console.log("Delta:", delta, "T:", this.temperature, "Prob:", prob);
 
             if (Math.random() < prob) {
                 return [nb, nbScore];
