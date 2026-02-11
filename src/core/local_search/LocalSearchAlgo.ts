@@ -48,6 +48,7 @@ export class LocalSearchAlgo<
                 currentSolution = nextNb;
             }
             this.strategy.update(nextNb, nextNbScore, stats);
+            this.objective.update(stats);
         }
         return currentSolution;
     }

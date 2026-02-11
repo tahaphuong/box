@@ -21,7 +21,7 @@ import {
     HillClimbingStrategy,
 } from "@/core/local_search";
 import { RandomOverlapPlacement } from "@/core/greedy/placement/RandomOverlapPlacement";
-import { SimulatedAnnealingStrategy } from "@/core/local_search/LocalSearchStrategy";
+// import { SimulatedAnnealingStrategy } from "@/core/local_search/LocalSearchStrategy";
 
 /**
  * Use Algo here based on user input
@@ -39,15 +39,6 @@ export function handleSolveBinPacking(
     randomRate: number,
 ): [Solution, SolutionStats] {
     const start = performance.now();
-    const selection = createSelectionBinPack(
-        selectionOpt as SelectionOptionType,
-        [...instance.rectangles],
-    );
-    const placement = createPlacementBinPack(
-        placementOpt as PlacementOptionType,
-    );
-
-    let solution = new Solution(instance.L);
     const stats: SolutionStats = {
         runtime: null,
         numBox: null,
@@ -56,23 +47,27 @@ export function handleSolveBinPacking(
         numBoxImproved: null,
         scoreImproved: null,
     };
+    const selection = createSelectionBinPack(
+        selectionOpt as SelectionOptionType,
+        [...instance.rectangles],
+    );
+    const placement = createPlacementBinPack(
+        placementOpt as PlacementOptionType,
+    );
+    let solution = new Solution(instance.L);
 
     switch (algo) {
         case Algo.GREEDY: {
+            // If GREEDY -> solve
             const algo = new GreedyAlgo(selection, placement);
             solution = algo.solve(solution);
-
             stats.numBox = solution.idToBox.size;
             break;
         }
         case Algo.LOCAL: {
-            // init solution with SFF. Improve with either SBAF or BL (or SFF it self)
-            // Note: If init with BL -> can only improve with BL or stateless placements
-
-            // init solution
             let objective = new UltilizationBox();
-            let terminate = iterAndStagnated(maxIters, 10, 0.95); // max iter, stagnation threshold, stagnation ratio
-            let strategy = new HillClimbingStrategy<Solution>();
+            let terminate = iterAndStagnated(maxIters, 10); // max iter, stagnation threshold (early stop)
+            const strategy = new HillClimbingStrategy<Solution>();
 
             switch (neighborhoodOpt) {
                 case NeighborhoodOption.GEOMETRY: {
@@ -93,21 +88,13 @@ export function handleSolveBinPacking(
                     solution = greedyAlgo.solve(solution);
                     break;
                 }
+
                 case NeighborhoodOption.OVERLAP: {
                     // generate best feasible number of boxes and pack rectangles in random positions
-                    const originalSelection = new OriginalSelection([
-                        ...instance.rectangles,
-                    ]);
-                    const randomPlacement = new RandomOverlapPlacement();
                     const allRectsArea = instance.rectangles.reduce(
                         (acc, rect) => acc + rect.area,
                         0,
                     );
-                    const greedyAlgo = new GreedyAlgo(
-                        originalSelection,
-                        randomPlacement,
-                    );
-
                     const minNumBoxes = Math.ceil(
                         allRectsArea / solution.L ** 2,
                     );
@@ -116,10 +103,18 @@ export function handleSolveBinPacking(
                     }
                     terminate = maxIterations(maxIters);
                     objective = new PackingPenaltyObjective(0, maxIters);
-                    strategy = new SimulatedAnnealingStrategy<Solution>({
-                        maxIter: maxIters,
-                    });
-                    solution = greedyAlgo.solve(solution);
+                    // strategy = new SimulatedAnnealingStrategy<Solution>({
+                    //     maxIter: maxIters,
+                    // });
+                    const originalSelection = new OriginalSelection([
+                        ...instance.rectangles,
+                    ]);
+                    const randomPlacement = new RandomOverlapPlacement();
+                    const greedyAlgo = new GreedyAlgo(
+                        originalSelection,
+                        randomPlacement,
+                    );
+                    solution = greedyAlgo.solve(solution); // gen random solution
                     break;
                 }
             }

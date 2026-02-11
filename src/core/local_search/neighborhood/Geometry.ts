@@ -74,7 +74,8 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
 
         for (const box of picks) {
             // 1. build neighbor
-            let pl = this.placement;
+            let placementClone = this.placement;
+            let moved = false;
 
             const neighbor = currentSol.clone((newSol) => {
                 const draftBox = newSol.idToBox.get(box.id);
@@ -84,18 +85,18 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
                 newSol.removeBox(draftBox.id);
 
                 // 2. create placement clone and do mutations inside the draft
-                const placementClone = this.placement.clone(
-                    (draftPlacement) => {
-                        draftPlacement.removeBox(draftBox.id);
-                        for (const item of rects) {
+                placementClone = this.placement.clone((draftPlacement) => {
+                    draftPlacement.removeBox(draftBox.id);
+                    for (const item of rects) {
+                        moved =
+                            moved ||
                             draftPlacement.checkThenAdd(item, newSol, null);
-                        }
-                    },
-                );
-                pl = placementClone;
+                    }
+                });
             });
 
-            this.built.push({ sol: neighbor, placement: pl });
+            if (!moved) continue;
+            this.built.push({ sol: neighbor, placement: placementClone });
             neighbors.push(neighbor);
         }
         return neighbors;

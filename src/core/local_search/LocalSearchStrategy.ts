@@ -17,7 +17,6 @@ export interface LocalSearchStrategy<SOL extends AlgoSolution> {
 export class HillClimbingStrategy<
     SOL extends AlgoSolution,
 > implements LocalSearchStrategy<SOL> {
-    // always find neighbor with best score
     pickNext(
         neighbors: SOL[],
         stats: Stats,
@@ -56,21 +55,18 @@ export class SimulatedAnnealingStrategy<
 > implements LocalSearchStrategy<SOL> {
     private temperature: number;
     private readonly TStart: number;
-    private readonly TEnd: number;
     private readonly maxIter: number;
 
     constructor(options?: {
-        // initialTemperature?: number;
+        initialTemperature?: number;
         // finalTemperature?: number;
         maxIter?: number;
     }) {
-        this.TStart = 50;
-        this.TEnd = 0.1;
         this.maxIter = Math.max(1, options?.maxIter ?? 1000);
+        this.TStart = options?.initialTemperature ?? 50;
         this.temperature = this.TStart;
     }
 
-    // Pick a neighbor according to SA acceptance probability
     pickNext(
         neighbors: SOL[],
         stats: Stats,
@@ -78,9 +74,9 @@ export class SimulatedAnnealingStrategy<
     ): [SOL | null, number] {
         if (neighbors.length === 0) return [null, stats.bestScore];
 
-        // Linear cooling
+        // linear cooling
         const t = Math.min(stats.iteration + 1, this.maxIter);
-        this.temperature = this.TStart / Math.log(t + 2);
+        this.temperature = this.TStart / Math.log(t);
 
         const currentScore = stats.bestScore;
 
@@ -97,7 +93,7 @@ export class SimulatedAnnealingStrategy<
                 delta = delta / Math.max(Math.abs(currentScore), 1e-6); // scale
                 prob = Math.exp(-delta / this.temperature);
             }
-            // TODO: Check cooling again
+
             // console.log("Delta:", delta, "T:", this.temperature, "Prob:", prob);
 
             if (Math.random() < prob) {
@@ -108,11 +104,9 @@ export class SimulatedAnnealingStrategy<
         return [null, currentScore];
     }
 
-    // Update internal state: track iterations and stagnation; bestScore updated when a move is taken
     update(nb: SOL | null, nbScore: number, stats: Stats): void {
         if (nb) {
             stats.stagnationCounter = 0;
-            // SA typically updates "current" score; if you track global best externally, keep bestScore as current
             stats.bestScore = nbScore;
         } else {
             stats.stagnationCounter++;
@@ -146,14 +140,13 @@ export class SimulatedAnnealingStrategy<
 
 //     return best
 
-// BACKLOG: to escape local optimum
 // class TabuSearchStrategy<T> implements SearchStrategy<T> {
 //   private tabuList: Set<string> = new Set();
 
 //   update(current: T, next: T): void {
 //     const moveKey = this.generateHash(current, next);
-//     this.tabuList.add(moveKey); // "Remember" this move to avoid cycles
+//     this.tabuList.add(moveKey);
 
-//     // Logic to prune old tabu entries would go here
+//
 //   }
 // }

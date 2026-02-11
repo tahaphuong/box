@@ -1,14 +1,20 @@
 import type { AlgoSolution } from "@/models";
 import type { Solution } from "@/models/binpacking";
 import { calOverlapRate } from "@/core/local_search/helpers";
+import type { Stats } from "./Stats";
 
 export interface ObjectiveFunction<SOL extends AlgoSolution> {
     score(sol: SOL): number;
     isBetterScore(a: number, b: number): boolean; // better score can be larger/smaller
+    update(stats: Stats): void;
 }
 
 // Goal: Maximize
 export class UltilizationBox implements ObjectiveFunction<Solution> {
+    update(_stats: Stats): void {
+        void _stats;
+    }
+
     // Falkenauer’s Grouping Fitness
     score(sol: Solution): number {
         let total = 0;
@@ -41,10 +47,10 @@ export class PackingPenaltyObjective implements ObjectiveFunction<Solution> {
     }
 
     // Optional helper to update iteration externally
-    // setIteration(curIter: number, maxIter?: number) {
-    //     this.curIter = curIter;
-    //     if (maxIter !== undefined) this.maxIter = maxIter;
-    // }
+    update(stats: Stats) {
+        this.curIter = stats.iteration;
+        // if (maxIter !== undefined) this.maxIter = maxIter;
+    }
 
     score(sol: Solution): number {
         const progress = this.curIter / this.maxIter; // run from 0 to 1
