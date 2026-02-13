@@ -1,14 +1,6 @@
 import type { AlgoInterface, AlgoSolution } from "@/models";
-import type {
-    Neighborhood,
-    ObjectiveFunction,
-    Termination,
-    Stats,
-    LocalSearchStrategy,
-} from ".";
-export class LocalSearchAlgo<
-    SOL extends AlgoSolution,
-> implements AlgoInterface<SOL> {
+import type { Neighborhood, ObjectiveFunction, Termination, Stats, LocalSearchStrategy } from ".";
+export class LocalSearchAlgo<SOL extends AlgoSolution> implements AlgoInterface<SOL> {
     private strategy: LocalSearchStrategy<SOL>; // how to pick best move
     private terminate: Termination; // termination criteria based on stats
     private neighborhood: Neighborhood<SOL>; // geometry, permutation or overlap
@@ -29,26 +21,26 @@ export class LocalSearchAlgo<
         const stats: Stats = {
             iteration: 0,
             bestScore: this.objective.score(solution),
+            currentScore: 0,
             stagnationCounter: 0,
         };
+
         let currentSolution = solution;
+
         while (!this.terminate(stats)) {
-            const neighbors = this.neighborhood.getNeighbors(
-                currentSolution,
-                stats,
-            );
-            const [nextNb, nextNbScore] = this.strategy.pickNext(
-                neighbors,
-                stats,
-                this.objective,
-            );
+            this.objective.update(stats);
+            stats.currentScore = this.objective.score(currentSolution);
+            const neighbors = this.neighborhood.getNeighbors(currentSolution, stats);
+            const [nextNb, nextNbScore] = this.strategy.pickNext(neighbors, stats, this.objective);
 
             // If found "suitable" move -> apply (new neighbor)
             if (nextNb) {
                 currentSolution = nextNb;
             }
             this.strategy.update(nextNb, nextNbScore, stats);
-            this.objective.update(stats);
+            if (this.objective.isBetterScore(nextNbScore, stats.bestScore)) {
+                stats.bestScore = nextNbScore;
+            }
         }
         return currentSolution;
     }

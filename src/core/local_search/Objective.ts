@@ -58,6 +58,7 @@ export class PackingPenaltyObjective implements ObjectiveFunction<Solution> {
         let sumOverlap = 0;
         let maxOverlap = 0;
         let overlapCount = 0;
+        const numBoxes = sol.idToBox.size;
 
         // check each box
         for (const box of [...sol.idToBox.values()]) {
@@ -76,12 +77,12 @@ export class PackingPenaltyObjective implements ObjectiveFunction<Solution> {
         }
 
         // dynamic weights
-        const alpha = 1;
-        const beta = 10 * Math.pow(progress, 2); // hard constraint ramps up
-        const gamma = 0.1 * progress;
+        const alpha = 5;
+        const beta = 50 * Math.pow(progress, 2);
+        const gamma = 1 * progress;
+        const delta = 10 * Math.pow(progress, 2);
 
-        const penalty =
-            alpha * sumOverlap + beta * maxOverlap + gamma * overlapCount;
+        const penalty = alpha * sumOverlap + beta * maxOverlap + gamma * overlapCount + delta * numBoxes;
         return penalty;
     }
 

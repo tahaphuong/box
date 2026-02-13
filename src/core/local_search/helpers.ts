@@ -27,7 +27,7 @@ function getBoxesToUnpack(boxes: Box[], n: number, randomRate?: number): Box[] {
 }
 
 function isOverflow(rect: Rectangle, bound: number) {
-    return rect.x + rect.getWidth >= bound || rect.y + rect.getHeight >= bound;
+    return rect.x + rect.getWidth > bound || rect.y + rect.getHeight > bound;
 }
 
 function isOverlapping(a: Rectangle, b: Rectangle): boolean {
@@ -39,17 +39,31 @@ function isOverlapping(a: Rectangle, b: Rectangle): boolean {
     );
 }
 
+// Cheap AABB overlap check, then area
+export function overlapArea(a: Rectangle, b: Rectangle): number {
+    // Read local vars once to avoid property getter overhead
+    const ax = a.x,
+        ay = a.y,
+        aw = a.getWidth,
+        ah = a.getHeight;
+    const bx = b.x,
+        by = b.y,
+        bw = b.getWidth,
+        bh = b.getHeight;
+
+    // Non-overlapping quick reject
+    if (ax + aw <= bx || bx + bw <= ax || ay + ah <= by || by + bh <= ay) return 0;
+
+    const xOverlap = Math.min(ax + aw, bx + bw) - Math.max(ax, bx);
+    const yOverlap = Math.min(ay + ah, by + bh) - Math.max(ay, by);
+    return xOverlap * yOverlap;
+}
+
 function calOverlapRate(a: Rectangle, b: Rectangle): number {
-    const xOverlap = Math.max(
-        0,
-        Math.min(a.x + a.getWidth, b.x + b.getWidth) - Math.max(a.x, b.x),
-    );
-    const yOverlap = Math.max(
-        0,
-        Math.min(a.y + a.getHeight, b.y + b.getHeight) - Math.max(a.y, b.y),
-    );
-    const overlapArea = xOverlap * yOverlap;
-    return overlapArea / Math.max(a.area, b.area);
+    const area = overlapArea(a, b);
+    if (area === 0) return 0;
+    const aa = a.area <= b.area ? b.area : a.area; // max(a.area, b.area) without function call
+    return area / aa;
 }
 
 function shuffle<Item>(array: Array<Item>): Array<Item> {
@@ -60,14 +74,13 @@ function shuffle<Item>(array: Array<Item>): Array<Item> {
     return array;
 }
 
-export {
-    randInt,
-    getBoxesToUnpack,
-    isOverflow,
-    isOverlapping,
-    calOverlapRate,
-    shuffle,
-};
+function totalOverlapOfRect(rect: Rectangle, box: Box): number {
+    const currentRects = box.rectangles.filter((r) => r.id !== rect.id);
+    const overlap = currentRects.reduce((acc, r) => acc + calOverlapRate(rect, r), 0);
+    return overlap;
+}
+
+export { isOverlapping, getBoxesToUnpack, calOverlapRate, shuffle, totalOverlapOfRect, randInt };
 
 // ------------------------------------------------------------------
 // Helpers for Overlap neighborhood
@@ -97,6 +110,7 @@ function clampInt(v: number, min: number, max: number): number {
 // ------------------------------------------------------------------
 // Moves for Overlap neighborhood
 
+// GLOBAL
 function moveToExistingEmptyBox(sol: Solution, rect: Rectangle): boolean {
     const boxes = shuffle<Box>([...sol.idToBox.values()]);
     // add to empty box
@@ -104,25 +118,9 @@ function moveToExistingEmptyBox(sol: Solution, rect: Rectangle): boolean {
         if (targetBox.id === rect.boxId) continue;
         if (targetBox.rectangles.length == 0) {
             sol.removeRectangle(rect);
-            // move to a random edge
-            rect.x = Math.random() < 0.5 ? sol.L - rect.getWidth : 0;
-            rect.y = Math.random() < 0.5 ? sol.L - rect.getHeight : 0;
-            sol.addRectangle(rect, targetBox.id);
-            return true;
-        }
-    }
-    return false;
-}
-
-function moveToBoxWithSpace(sol: Solution, rect: Rectangle): boolean {
-    const boxes = shuffle<Box>([...sol.idToBox.values()]);
-    for (const targetBox of boxes) {
-        if (targetBox.id === rect.boxId) continue;
-        if (targetBox && targetBox.areaLeft >= rect.area) {
-            sol.removeRectangle(rect);
-            // move to a random edge
-            rect.x = Math.random() < 0.5 ? sol.L - rect.getWidth : 0;
-            rect.y = Math.random() < 0.5 ? sol.L - rect.getHeight : 0;
+            // move to a bottom left edge
+            rect.x = 0;
+            rect.y = 0;
             sol.addRectangle(rect, targetBox.id);
             return true;
         }
@@ -134,165 +132,205 @@ function moveToNewBox(sol: Solution, rect: Rectangle): boolean {
     const newBox = sol.addNewBox();
     if (!newBox) return false;
     sol.removeRectangle(rect);
-    // move to a random edge
-    rect.x = Math.random() < 0.5 ? sol.L - rect.getWidth : 0;
-    rect.y = Math.random() < 0.5 ? sol.L - rect.getHeight : 0;
+    rect.x = 0;
+    rect.y = 0;
     sol.addRectangle(rect, newBox.id);
     return true;
 }
 
-function moveToRandomBox(sol: Solution, rect: Rectangle): boolean {
-    const boxes = [...sol.idToBox.values()];
-    const targetBox =
-        boxes[Math.min(randInt(0, boxes.length), boxes.length - 1)];
-    if (!targetBox || targetBox.id === rect.boxId) return false;
+function moveToBoxWithSpace(sol: Solution, rect: Rectangle, findBest: boolean): boolean {
+    const boxes = shuffle<Box>([...sol.idToBox.values()]);
+    let bestBoxId = null;
+    let leastWaste = Infinity;
 
+    for (const targetBox of boxes) {
+        if (targetBox.id === rect.boxId) continue;
+        const waste = targetBox.areaLeft - rect.area;
+        if (waste >= 0) {
+            if (waste < leastWaste) {
+                leastWaste = waste;
+                bestBoxId = targetBox.id;
+                if (!findBest) break;
+            }
+        }
+    }
+
+    if (bestBoxId == null) return false;
     sol.removeRectangle(rect);
-    // move to a random edge
-    rect.x = Math.random() < 0.5 ? sol.L - rect.getWidth : 0;
-    rect.y = Math.random() < 0.5 ? sol.L - rect.getHeight : 0;
-    sol.addRectangle(rect, targetBox.id);
+    sol.addRectangle(rect, bestBoxId);
     return true;
 }
 
-function rotateRect(L: number, rect: Rectangle): boolean {
-    rect.isSideway = !rect.isSideway;
+function moveToBoxLessOverlap(sol: Solution, rect: Rectangle, curOverlap: number, findBest: boolean): boolean {
+    const boxes = shuffle<Box>([...sol.idToBox.values()]);
+    let bestOverlap = curOverlap;
+    let bestBoxId = null;
+    const oldCoords = { x: rect.x, y: rect.y };
+    const edgeX = sol.L - rect.getWidth;
+    const edgeY = sol.L - rect.getHeight;
+    const applyCoords = (coords: { x: number; y: number }) => {
+        rect.x = coords.x;
+        rect.y = coords.y;
+    };
 
-    // check bound
-    if (isOverflow(rect, L)) {
-        rect.isSideway = !rect.isSideway;
+    const coordCandidates = [
+        { x: oldCoords.x, y: oldCoords.y },
+        { x: 0, y: 0 },
+        { x: 0, y: edgeY },
+        { x: edgeX, y: 0 },
+        { x: edgeX, y: edgeY },
+    ];
+
+    for (const targetBox of boxes) {
+        if (targetBox.id === rect.boxId) continue;
+        if (targetBox.areaLeft >= rect.area) {
+            for (const coords of coordCandidates) {
+                applyCoords(coords);
+                const overlap = totalOverlapOfRect(rect, targetBox);
+                if (overlap < bestOverlap) {
+                    bestOverlap = overlap;
+                    bestBoxId = targetBox.id;
+                    if (!findBest || bestOverlap === 0) break;
+                }
+            }
+        }
+    }
+    if (bestBoxId == null) {
+        rect.x = oldCoords.x;
+        rect.y = oldCoords.y;
         return false;
     }
+    sol.removeRectangle(rect);
+    sol.addRectangle(rect, bestBoxId);
     return true;
 }
 
-function swapRects(L: number, d1: Rectangle, d2: Rectangle): boolean {
+// LOCAL
+function rotateRect(rect: Rectangle): void {
+    rect.isSideway = !rect.isSideway;
+}
+
+function tryRotateRect(box: Box, d1: Rectangle, d2: Rectangle, cur2RectsOverlap: number): null | number {
+    rotateRect(d1);
+    const newOverlap = calOverlapRate(d1, d2);
+    // check bound
+    if (isOverflow(d1, box.L) || newOverlap > cur2RectsOverlap) {
+        rotateRect(d1);
+        return null;
+    }
+    rotateRect(d1);
+    return newOverlap;
+}
+
+function swapRects(d1: Rectangle, d2: Rectangle): void {
     [d1.x, d2.x] = [d2.x, d1.x];
     [d1.y, d2.y] = [d2.y, d1.y];
-
-    if (isOverflow(d1, L) || isOverflow(d2, L)) {
-        [d1.x, d2.x] = [d2.x, d1.x];
-        [d1.y, d2.y] = [d2.y, d1.y];
-        return false;
-    }
-    return true;
 }
 
-function moveTwoRects(L: number, d1: Rectangle, d2: Rectangle): boolean {
-    const c1 = centerOf(d1);
-    const c2 = centerOf(d2);
-
-    // discrete push direction from centers
-    let { nx, ny } = normalizeDiscrete(c1.cx - c2.cx, c1.cy - c2.cy);
-    if (nx === 0) nx = d1.x < d2.x ? -1 : 1;
-    if (ny === 0) ny = d1.y < d2.y ? -1 : 1;
-
-    // compute overlap along each axis
-    const overlapX =
-        Math.min(d1.x + d1.getWidth, d2.x + d2.getWidth) - Math.max(d1.x, d2.x);
-    const overlapY =
-        Math.min(d1.y + d1.getHeight, d2.y + d2.getHeight) -
-        Math.max(d1.y, d2.y);
-
-    // no overlap at all
-    if (overlapX <= 0 && overlapY <= 0) return false;
-
-    // determine axis to push: smaller overlap first, random if equal
-    let pushAxis: "x" | "y";
-    if (overlapX < overlapY) pushAxis = "x";
-    else if (overlapY < overlapX) pushAxis = "y";
-    else pushAxis = Math.random() < 0.5 ? "x" : "y"; // tie-break randomly
-
-    const nxPush = pushAxis === "x" ? nx : 0;
-    const nyPush = pushAxis === "y" ? ny : 0;
-    const step = pushAxis === "x" ? overlapX : overlapY;
-
-    // remember old positions
-    const oldD1 = { x: d1.x, y: d1.y };
-    const oldD2 = { x: d2.x, y: d2.y };
-
-    // move d1 along the chosen axis
-    if (pushAxis === "x")
-        d1.x = clampInt(d1.x + nxPush * step, 0, L - d1.getWidth);
-    if (pushAxis === "y")
-        d1.y = clampInt(d1.y + nyPush * step, 0, L - d1.getHeight);
-
-    // check if overlap still exists
-    const stillOverlap =
-        Math.min(d1.x + d1.getWidth, d2.x + d2.getWidth) -
-            Math.max(d1.x, d2.x) >
-            0 &&
-        Math.min(d1.y + d1.getHeight, d2.y + d2.getHeight) -
-            Math.max(d1.y, d2.y) >
-            0;
-
-    // move d2 along the same axis if needed
-    if (stillOverlap) {
-        const remainingStep =
-            step -
-            (pushAxis === "x"
-                ? Math.abs(d1.x - oldD1.x)
-                : Math.abs(d1.y - oldD1.y));
-
-        if (pushAxis === "x")
-            d2.x = clampInt(d2.x - nxPush * remainingStep, 0, L - d2.getWidth);
-        if (pushAxis === "y")
-            d2.y = clampInt(d2.y - nyPush * remainingStep, 0, L - d2.getHeight);
+function trySwapRects(box: Box, d1: Rectangle, d2: Rectangle, cur2RectsOverlap: number): null | number {
+    swapRects(d1, d2);
+    const newOverlap = calOverlapRate(d1, d2);
+    if (isOverflow(d1, box.L) || isOverflow(d2, box.L) || newOverlap > cur2RectsOverlap) {
+        swapRects(d1, d2);
+        return null;
     }
-
-    // return true if either rectangle moved
-    const movedD1 = d1.x !== oldD1.x || d1.y !== oldD1.y;
-    const movedD2 = d2.x !== oldD2.x || d2.y !== oldD2.y;
-    return movedD1 || movedD2;
+    swapRects(d1, d2);
+    return newOverlap;
 }
 
-function pushTwoRects(L: number, d1: Rectangle, d2: Rectangle): boolean {
+function moveOneRect(
+    box: Box,
+    d1: Rectangle,
+    d2: Rectangle,
+    cur2RectsOverlap: number,
+    findBest: boolean,
+): null | { rect: Rectangle; x: number; y: number; overlap: number } {
+    // move smaller first
+    if (d1.area > d2.area) [d1, d2] = [d2, d1];
+
     const c1 = centerOf(d1);
     const c2 = centerOf(d2);
 
     let { nx, ny } = normalizeDiscrete(c1.cx - c2.cx, c1.cy - c2.cy);
-
     if (nx === 0) nx = d1.x < d2.x ? -1 : 1;
     if (ny === 0) ny = d1.y < d2.y ? -1 : 1;
 
-    // compute overlap along each axis
-    const overlapX =
-        Math.min(d1.x + d1.getWidth, d2.x + d2.getWidth) - Math.max(d1.x, d2.x);
-    const overlapY =
-        Math.min(d1.y + d1.getHeight, d2.y + d2.getHeight) -
-        Math.max(d1.y, d2.y);
+    const overlapX = Math.min(d1.x + d1.getWidth, d2.x + d2.getWidth) - Math.max(d1.x, d2.x);
+    const overlapY = Math.min(d1.y + d1.getHeight, d2.y + d2.getHeight) - Math.max(d1.y, d2.y);
 
-    if (overlapX <= 0 && overlapY <= 0) return false; // safety check
+    if (overlapX <= 0 || overlapY <= 0) return null;
 
-    // push d1 first
-    const oldD1X = d1.x;
-    const oldD1Y = d1.y;
-    if (overlapX > 0) d1.x = clampInt(d1.x + nx * overlapX, 0, L - d1.getWidth);
-    if (overlapY > 0)
-        d1.y = clampInt(d1.y + ny * overlapY, 0, L - d1.getHeight);
+    // avoid bias
+    const steps = shuffle([
+        { axis: "x" as const, step: overlapX, dir: nx },
+        { axis: "y" as const, step: overlapY, dir: ny },
+    ]);
+    const rects = shuffle([d1, d2]);
 
-    const movedD1 = d1.x !== oldD1X || d1.y !== oldD1Y;
+    let bestPos = null;
+    for (let i = 0; i < 2; i++) {
+        for (const s of steps) {
+            const pos = checkMove(rects[i], rects[1 - i], cur2RectsOverlap, box, s.axis, s.dir, s.step, findBest);
+            if (pos && (!bestPos || pos.overlap < bestPos.overlap)) {
+                bestPos = { rect: rects[i], ...pos };
+                if (bestPos.overlap == 0) return bestPos;
+                if (!findBest) break;
+            }
+        }
+    }
 
-    // push d2 if still overlapping
-    const remainingX = overlapX > 0 ? overlapX - Math.abs(d1.x - oldD1X) : 0;
-    const remainingY = overlapY > 0 ? overlapY - Math.abs(d1.y - oldD1Y) : 0;
-    if (remainingX > 0)
-        d2.x = clampInt(d2.x - nx * remainingX, 0, L - d2.getWidth);
-    if (remainingY > 0)
-        d2.y = clampInt(d2.y - ny * remainingY, 0, L - d2.getHeight);
+    return bestPos;
+}
 
-    const movedD2 = d2.x !== oldD1X || d2.y !== oldD1Y;
+function checkMove(
+    r: Rectangle,
+    otherRect: Rectangle,
+    curOverlap: number,
+    box: Box,
 
-    return movedD1 || movedD2;
+    axis: "x" | "y",
+    dir: number,
+    step: number,
+    findBest: boolean,
+): null | { x: number; y: number; overlap: number } {
+    const oldX = r.x,
+        oldY = r.y;
+
+    const move = (sign: number) => {
+        if (axis === "x") r.x = clampInt(r.x + sign * dir * step, 0, box.L - r.getWidth);
+        else r.y = clampInt(r.y + sign * dir * step, 0, box.L - r.getHeight);
+    };
+    let bestOverlap = curOverlap;
+    let bestPos = null;
+    move(+1);
+    let ol = calOverlapRate(r, otherRect);
+    if (ol < bestOverlap) {
+        bestOverlap = ol;
+        bestPos = { x: r.x, y: r.y, overlap: bestOverlap };
+    }
+    r.x = oldX;
+    r.y = oldY;
+    if (!findBest && bestPos !== null) return bestPos;
+
+    move(-1);
+    ol = calOverlapRate(r, otherRect);
+    if (ol < bestOverlap) {
+        bestOverlap = ol;
+        bestPos = { x: r.x, y: r.y, overlap: bestOverlap };
+    }
+    r.x = oldX;
+    r.y = oldY;
+    return bestPos;
 }
 
 export {
     moveToExistingEmptyBox,
+    moveToBoxLessOverlap,
     moveToBoxWithSpace,
-    moveToRandomBox,
     moveToNewBox,
-    moveTwoRects,
-    pushTwoRects,
+    moveOneRect,
+    trySwapRects,
     swapRects,
+    tryRotateRect,
     rotateRect,
 };

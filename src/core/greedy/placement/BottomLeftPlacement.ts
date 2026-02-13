@@ -1,17 +1,12 @@
 import { type GreedyPlacement } from "./GreedyPlacement";
-import { Solution, type Rectangle, type Position } from "@/models/binpacking";
+import { Solution, type Rectangle, type Position, Box } from "@/models/binpacking";
 // import { create, castDraft } from "mutative";
 
 // Improved bottom left
-export class BottomLeftFirstFit implements GreedyPlacement<
-    Rectangle,
-    Solution
-> {
+export class BottomLeftFirstFit implements GreedyPlacement<Rectangle, Solution> {
     constructor() {}
     clearState(): void {}
-    clone(
-        updateFn?: (draft: GreedyPlacement<Rectangle, Solution>) => void,
-    ): GreedyPlacement<Rectangle, Solution> {
+    clone(updateFn?: (draft: GreedyPlacement<Rectangle, Solution>) => void): GreedyPlacement<Rectangle, Solution> {
         if (updateFn) updateFn(this);
         return this;
     }
@@ -45,89 +40,77 @@ export class BottomLeftFirstFit implements GreedyPlacement<
         return targetX;
     }
 
-    isOverflown(
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        boxL: number,
-    ): boolean {
+    isOverflown(x: number, y: number, width: number, height: number, boxL: number): boolean {
         return x + width > boxL || y + height > boxL;
     }
 
+    findPositionInBox(item: Rectangle, box: Box): Position | null {
+        const bestPos: Position = {
+            boxId: box.id,
+            x: Infinity,
+            y: Infinity,
+            isSideway: item.isSideway,
+        };
+        let found = false;
+
+        const boxRects = box.rectangles;
+        for (const sideway of [true, false]) {
+            const width = item.getWidthWith(sideway);
+            const height = item.getHeightWith(sideway);
+
+            let bestX = box.L - width;
+            let bestY = box.L - height;
+
+            let x = bestX;
+            let y = bestY;
+
+            // prune if overflow
+            let moved = false;
+            do {
+                moved = false;
+                const newY = this.moveDown(x, width, boxRects);
+                if (newY < y) {
+                    y = newY;
+                    moved = true;
+                }
+                const newX = this.moveLeft(y, height, boxRects);
+                if (newX < x) {
+                    x = newX;
+                    moved = true;
+                }
+            } while (moved);
+
+            if (this.isOverflown(x, y, width, height, box.L)) continue;
+
+            if (y < bestY || (y === bestY && x < bestX)) {
+                bestX = x;
+                bestY = y;
+                found = true;
+
+                if (bestY < bestPos.y || (bestY === bestPos.y && bestX < bestPos.x)) {
+                    bestPos.x = bestX;
+                    bestPos.y = bestY;
+                    bestPos.isSideway = sideway;
+                }
+            }
+        }
+
+        return found ? bestPos : null;
+    }
+
+    // First Fit
     findPosition(item: Rectangle, solution: Solution): Position | null {
         for (const box of solution.idToBox.values()) {
             if (box.areaLeft < item.area) continue;
 
-            let globalX = Infinity;
-            let globalY = Infinity;
-            let globalSideway = item.isSideway;
-            let found = false;
-
-            const boxRects = box.rectangles;
-
-            for (const sideway of [true, false]) {
-                const width = item.getWidthWith(sideway);
-                const height = item.getHeightWith(sideway);
-
-                let bestX = box.L - width;
-                let bestY = box.L - height;
-
-                let x = bestX;
-                let y = bestY;
-
-                // prune if overflow
-                let moved = false;
-                do {
-                    moved = false;
-                    const newY = this.moveDown(x, width, boxRects);
-                    if (newY < y) {
-                        y = newY;
-                        moved = true;
-                    }
-                    const newX = this.moveLeft(y, height, boxRects);
-                    if (newX < x) {
-                        x = newX;
-                        moved = true;
-                    }
-                } while (moved);
-
-                if (this.isOverflown(x, y, width, height, box.L)) continue;
-
-                if (y < bestY || (y === bestY && x < bestX)) {
-                    bestX = x;
-                    bestY = y;
-                    found = true;
-
-                    if (
-                        bestY < globalY ||
-                        (bestY === globalY && bestX < globalX)
-                    ) {
-                        globalX = bestX;
-                        globalY = bestY;
-                        globalSideway = sideway;
-                    }
-                }
-            }
-
-            if (found) {
-                return {
-                    boxId: box.id,
-                    x: globalX,
-                    y: globalY,
-                    isSideway: globalSideway,
-                };
-            }
+            const bestPos = this.findPositionInBox(item, box);
+            if (bestPos) return bestPos;
         }
 
         return null;
     }
 
-    checkThenAdd(
-        item: Rectangle,
-        solution: Solution,
-        indicatedPos: Position | null = null,
-    ): boolean {
+    checkThenAdd(item: Rectangle, solution: Solution, indicatedPos: Position | null = null): boolean {
         const pos = indicatedPos ?? this.findPosition(item, solution);
 
         if (pos) {

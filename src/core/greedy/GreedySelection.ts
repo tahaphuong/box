@@ -46,6 +46,8 @@ export function createSelectionBinPack(
             return new LongestSideFirst(items);
         case SelectionOption.LARGEST:
             return new LargestAreaFirst(items);
+        case SelectionOption.ORIGINAL:
+            return new OriginalSelection(items);
         default: {
             throw new Error(`Unknown greedy option: ${option}`);
         }

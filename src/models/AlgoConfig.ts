@@ -6,6 +6,7 @@ export const Algo = {
 export const SelectionOption = {
     LONGEST: "Longest side",
     LARGEST: "Largest area",
+    ORIGINAL: "Original",
 } as const;
 
 export const PlacementOption = {

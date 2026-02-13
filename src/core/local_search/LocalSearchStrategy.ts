@@ -23,7 +23,7 @@ export class HillClimbingStrategy<
         objective: ObjectiveFunction<SOL>,
     ): [SOL | null, number] {
         let bestNb: SOL | null = null;
-        let bestNbScore = stats.bestScore;
+        let bestNbScore = stats.currentScore;
 
         // pick best neighbor (including the current solution)
         for (const nb of neighbors) {
@@ -43,7 +43,7 @@ export class HillClimbingStrategy<
     update(nb: SOL | null, nbScore: number, stats: Stats): void {
         if (nb) {
             stats.stagnationCounter = 0;
-            stats.bestScore = nbScore;
+            stats.currentScore = nbScore;
         } else {
             stats.stagnationCounter++;
         }
