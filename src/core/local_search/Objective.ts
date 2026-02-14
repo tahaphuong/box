@@ -77,10 +77,10 @@ export class PackingPenaltyObjective implements ObjectiveFunction<Solution> {
         }
 
         // dynamic weights
-        const alpha = 5;
-        const beta = 50 * Math.pow(progress, 2);
-        const gamma = 1 * progress;
-        const delta = 10 * Math.pow(progress, 2);
+        const alpha = 1;
+        const beta = 30 * progress ** 2;
+        const gamma = 0.1 * progress;
+        const delta = 2 * progress ** 2;
 
         const penalty = alpha * sumOverlap + beta * maxOverlap + gamma * overlapCount + delta * numBoxes;
         return penalty;

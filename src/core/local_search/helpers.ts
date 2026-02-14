@@ -66,12 +66,10 @@ function calOverlapRate(a: Rectangle, b: Rectangle): number {
     return area / aa;
 }
 
-function shuffle<Item>(array: Array<Item>): Array<Item> {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = randInt(0, i + 1);
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+function countOverlaps(rect: Rectangle, box: Box): number {
+    const currentRects = box.rectangles.filter((r) => r.id !== rect.id);
+    const counts = currentRects.reduce((acc, r) => acc + (isOverlapping(rect, r) ? 1 : 0), 0);
+    return counts;
 }
 
 function totalOverlapOfRect(rect: Rectangle, box: Box): number {
@@ -80,7 +78,15 @@ function totalOverlapOfRect(rect: Rectangle, box: Box): number {
     return overlap;
 }
 
-export { isOverlapping, getBoxesToUnpack, calOverlapRate, shuffle, totalOverlapOfRect, randInt };
+function shuffle<Item>(array: Array<Item>): Array<Item> {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = randInt(0, i + 1);
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+export { isOverlapping, getBoxesToUnpack, calOverlapRate, countOverlaps, shuffle, totalOverlapOfRect, randInt };
 
 // ------------------------------------------------------------------
 // Helpers for Overlap neighborhood
@@ -112,7 +118,7 @@ function clampInt(v: number, min: number, max: number): number {
 
 // GLOBAL
 function moveToExistingEmptyBox(sol: Solution, rect: Rectangle): boolean {
-    const boxes = shuffle<Box>([...sol.idToBox.values()]);
+    const boxes = [...sol.idToBox.values()];
     // add to empty box
     for (const targetBox of boxes) {
         if (targetBox.id === rect.boxId) continue;
@@ -162,19 +168,20 @@ function moveToBoxWithSpace(sol: Solution, rect: Rectangle, findBest: boolean): 
 }
 
 function moveToBoxLessOverlap(sol: Solution, rect: Rectangle, curOverlap: number, findBest: boolean): boolean {
-    const boxes = shuffle<Box>([...sol.idToBox.values()]);
+    const boxes = [...sol.idToBox.values()].reverse();
     let bestOverlap = curOverlap;
     let bestBoxId = null;
-    const oldCoords = { x: rect.x, y: rect.y };
+
+    const oldCoords = { x: rect.x, y: rect.y, sideway: rect.isSideway };
     const edgeX = sol.L - rect.getWidth;
     const edgeY = sol.L - rect.getHeight;
-    const applyCoords = (coords: { x: number; y: number }) => {
+    const applyCoords = (coords: { x: number; y: number }, sideway: boolean) => {
         rect.x = coords.x;
         rect.y = coords.y;
+        rect.isSideway = sideway;
     };
 
     const coordCandidates = [
-        { x: oldCoords.x, y: oldCoords.y },
         { x: 0, y: 0 },
         { x: 0, y: edgeY },
         { x: edgeX, y: 0 },
@@ -185,12 +192,14 @@ function moveToBoxLessOverlap(sol: Solution, rect: Rectangle, curOverlap: number
         if (targetBox.id === rect.boxId) continue;
         if (targetBox.areaLeft >= rect.area) {
             for (const coords of coordCandidates) {
-                applyCoords(coords);
-                const overlap = totalOverlapOfRect(rect, targetBox);
-                if (overlap < bestOverlap) {
-                    bestOverlap = overlap;
-                    bestBoxId = targetBox.id;
-                    if (!findBest || bestOverlap === 0) break;
+                for (const sideway of [true, false]) {
+                    applyCoords(coords, sideway);
+                    const overlap = totalOverlapOfRect(rect, targetBox);
+                    if (overlap < bestOverlap) {
+                        bestOverlap = overlap;
+                        bestBoxId = targetBox.id;
+                        if (!findBest || bestOverlap === 0) break;
+                    }
                 }
             }
         }
@@ -198,6 +207,7 @@ function moveToBoxLessOverlap(sol: Solution, rect: Rectangle, curOverlap: number
     if (bestBoxId == null) {
         rect.x = oldCoords.x;
         rect.y = oldCoords.y;
+        rect.isSideway = oldCoords.sideway;
         return false;
     }
     sol.removeRectangle(rect);
@@ -206,20 +216,27 @@ function moveToBoxLessOverlap(sol: Solution, rect: Rectangle, curOverlap: number
 }
 
 // LOCAL
+
 function rotateRect(rect: Rectangle): void {
+    const c = centerOf(rect);
     rect.isSideway = !rect.isSideway;
+    rect.x = c.cx - rect.getWidth / 2;
+    rect.y = c.cy - rect.getHeight / 2;
 }
 
 function tryRotateRect(box: Box, d1: Rectangle, d2: Rectangle, cur2RectsOverlap: number): null | number {
+    // Apply rotation around center
+    const curCount = countOverlaps(d1, box);
     rotateRect(d1);
+    const newCount = countOverlaps(d1, box);
     const newOverlap = calOverlapRate(d1, d2);
-    // check bound
-    if (isOverflow(d1, box.L) || newOverlap > cur2RectsOverlap) {
-        rotateRect(d1);
-        return null;
+
+    if (!isOverflow(d1, box.L) && curCount <= newCount && newOverlap <= cur2RectsOverlap) {
+        return newOverlap;
     }
-    rotateRect(d1);
-    return newOverlap;
+
+    rotateRect(d1); // revert to original orientation and position
+    return null;
 }
 
 function swapRects(d1: Rectangle, d2: Rectangle): void {
@@ -302,24 +319,19 @@ function checkMove(
     };
     let bestOverlap = curOverlap;
     let bestPos = null;
-    move(+1);
-    let ol = calOverlapRate(r, otherRect);
-    if (ol < bestOverlap) {
-        bestOverlap = ol;
-        bestPos = { x: r.x, y: r.y, overlap: bestOverlap };
-    }
-    r.x = oldX;
-    r.y = oldY;
-    if (!findBest && bestPos !== null) return bestPos;
 
-    move(-1);
-    ol = calOverlapRate(r, otherRect);
-    if (ol < bestOverlap) {
-        bestOverlap = ol;
-        bestPos = { x: r.x, y: r.y, overlap: bestOverlap };
+    for (const m of [1, -1]) {
+        move(m);
+        const ol = calOverlapRate(r, otherRect);
+        if (!isOverflow(r, box.L) && ol < bestOverlap) {
+            bestOverlap = ol;
+            bestPos = { x: r.x, y: r.y, overlap: bestOverlap };
+        }
+        r.x = oldX;
+        r.y = oldY;
+        if (!findBest && bestPos !== null) return bestPos;
     }
-    r.x = oldX;
-    r.y = oldY;
+
     return bestPos;
 }
 

@@ -35,6 +35,11 @@ export class Box {
         }
     }
 
+    empty(): void {
+        this.rectangles.length = 0;
+        this.fillArea = 0;
+    }
+
     get fillRatio(): number {
         if (this.area == 0) return 0;
         return this.fillArea / this.area;
