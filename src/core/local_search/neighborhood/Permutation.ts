@@ -1,12 +1,7 @@
 import { Rectangle, Box } from "@/models/binpacking";
 import { Solution } from "@/models/binpacking";
 import { type Neighborhood } from "./Neighborhood";
-import {
-    GreedyAlgo,
-    type GreedyPlacement,
-    GreedySelection,
-    OriginalSelection,
-} from "@/core/greedy";
+import { GreedyAlgo, type GreedyPlacement, type GreedySelection, OriginalSelection } from "@/core/greedy";
 import { getBoxesToUnpack } from "@/core/local_search/helpers";
 
 /**
@@ -84,11 +79,7 @@ export class PermutationNeighborhood implements Neighborhood<Solution> {
 
         // unpack and rearange
         const boxes = this.findSortedBoxes(currentSol);
-        const picks = getBoxesToUnpack(
-            boxes,
-            this.numNeighbors,
-            this.randomRate,
-        );
+        const picks = getBoxesToUnpack(boxes, this.numNeighbors, this.randomRate);
         if (picks.length === 0) return neighbors;
 
         // clear 1 bin attempt

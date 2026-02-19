@@ -1,16 +1,7 @@
 import { Instance, Solution, type SolutionStats } from "@/models/binpacking";
-import type {
-    PlacementOptionType,
-    SelectionOptionType,
-    NeighborhoodOptionType,
-} from "@/models";
+import type { PlacementOptionType, SelectionOptionType, NeighborhoodOptionType } from "@/models";
 import { Algo, NeighborhoodOption, PlacementOption } from "@/models";
-import {
-    GreedyAlgo,
-    OriginalSelection,
-    createPlacementBinPack,
-    createSelectionBinPack,
-} from "@/core/greedy";
+import { GreedyAlgo, OriginalSelection, createPlacementBinPack, createSelectionBinPack } from "@/core/greedy";
 import {
     LocalSearchAlgo,
     createNeighborhoodBinPack,
@@ -47,13 +38,8 @@ export function handleSolveBinPacking(
         numBoxImproved: null,
         scoreImproved: null,
     };
-    const selection = createSelectionBinPack(
-        selectionOpt as SelectionOptionType,
-        [...instance.rectangles],
-    );
-    const placement = createPlacementBinPack(
-        placementOpt as PlacementOptionType,
-    );
+    const selection = createSelectionBinPack(selectionOpt as SelectionOptionType, [...instance.rectangles]);
+    const placement = createPlacementBinPack(placementOpt as PlacementOptionType);
     let solution = new Solution(instance.L);
 
     switch (algo) {
@@ -71,13 +57,8 @@ export function handleSolveBinPacking(
 
             switch (neighborhoodOpt) {
                 case NeighborhoodOption.GEOMETRY: {
-                    const initialPlacement = createPlacementBinPack(
-                        PlacementOption.SHELF_FIRST_FIT,
-                    );
-                    const greedyAlgo = new GreedyAlgo(
-                        selection,
-                        initialPlacement,
-                    );
+                    const initialPlacement = createPlacementBinPack(PlacementOption.SHELF_FIRST_FIT);
+                    const greedyAlgo = new GreedyAlgo(selection, initialPlacement);
                     solution = greedyAlgo.solve(solution);
                     placement.copyPlacementState(initialPlacement);
                     break;
@@ -91,13 +72,8 @@ export function handleSolveBinPacking(
 
                 case NeighborhoodOption.OVERLAP: {
                     // generate best feasible number of boxes and pack rectangles in random positions
-                    const allRectsArea = instance.rectangles.reduce(
-                        (acc, rect) => acc + rect.area,
-                        0,
-                    );
-                    const minNumBoxes = Math.ceil(
-                        allRectsArea / solution.L ** 2,
-                    );
+                    const allRectsArea = instance.rectangles.reduce((acc, rect) => acc + rect.area, 0);
+                    const minNumBoxes = Math.ceil(allRectsArea / solution.L ** 2);
                     for (let i = 0; i < minNumBoxes; i++) {
                         solution.addNewBox();
                     }
@@ -106,14 +82,9 @@ export function handleSolveBinPacking(
                     // strategy = new SimulatedAnnealingStrategy<Solution>({
                     //     maxIter: maxIters,
                     // });
-                    const originalSelection = new OriginalSelection([
-                        ...instance.rectangles,
-                    ]);
+                    const originalSelection = new OriginalSelection([...instance.rectangles]);
                     const randomPlacement = new RandomOverlapPlacement();
-                    const greedyAlgo = new GreedyAlgo(
-                        originalSelection,
-                        randomPlacement,
-                    );
+                    const greedyAlgo = new GreedyAlgo(originalSelection, randomPlacement);
                     solution = greedyAlgo.solve(solution); // gen random solution
                     break;
                 }
@@ -132,12 +103,7 @@ export function handleSolveBinPacking(
                 randomRate,
                 maxIters,
             );
-            const algo = new LocalSearchAlgo(
-                strategy,
-                terminate,
-                neighborhood,
-                objective,
-            );
+            const algo = new LocalSearchAlgo(strategy, terminate, neighborhood, objective);
             solution = algo.solve(solution);
 
             // print score after local search

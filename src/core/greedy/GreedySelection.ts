@@ -1,7 +1,11 @@
 import { SelectionOption, type SelectionOptionType } from "@/models";
 import type { Rectangle } from "@/models/binpacking";
 
-export abstract class GreedySelection<Item> {
+export interface GreedySelection<Item> {
+    items: Item[];
+    getNextItem(): Item | null;
+}
+abstract class OrderingSelection<Item> implements GreedySelection<Item> {
     items: Item[];
     index: number;
     constructor(items: Item[]) {
@@ -20,19 +24,19 @@ export abstract class GreedySelection<Item> {
     }
 }
 
-export class LargestAreaFirst extends GreedySelection<Rectangle> {
+export class LargestAreaFirst extends OrderingSelection<Rectangle> {
     preProcess(): void {
         this.items.sort((a, b) => b.area - a.area);
     }
 }
 
-export class LongestSideFirst extends GreedySelection<Rectangle> {
+export class LongestSideFirst extends OrderingSelection<Rectangle> {
     preProcess(): void {
         this.items.sort((a, b) => b.largerSide - a.largerSide);
     }
 }
 
-export class OriginalSelection extends GreedySelection<Rectangle> {
+export class OriginalSelection extends OrderingSelection<Rectangle> {
     preProcess(): void {}
 }
 

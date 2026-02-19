@@ -60,15 +60,8 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
         this.built.push({ sol: currentSol, placement: this.placement });
 
         const neighbors: Solution[] = [];
-        const boxes = this.findSortedBoxes(currentSol).slice(
-            0,
-            this.numNeighbors,
-        );
-        const picks = getBoxesToUnpack(
-            boxes,
-            this.numNeighbors,
-            this.randomRate,
-        );
+        const boxes = this.findSortedBoxes(currentSol).slice(0, this.numNeighbors);
+        const picks = getBoxesToUnpack(boxes, this.numNeighbors, this.randomRate);
 
         if (picks.length === 0) return neighbors;
 
@@ -88,9 +81,8 @@ export class GeometryNeighborhood implements Neighborhood<Solution> {
                 placementClone = this.placement.clone((draftPlacement) => {
                     draftPlacement.removeBox(draftBox.id);
                     for (const item of rects) {
-                        moved =
-                            moved ||
-                            draftPlacement.checkThenAdd(item, newSol, null);
+                        const placed = draftPlacement.checkThenAdd(item, newSol, null);
+                        moved = moved || placed;
                     }
                 });
             });

@@ -1,13 +1,9 @@
-import {
-    type NeighborhoodOptionType,
-    AlgoSolution,
-    NeighborhoodOption,
-} from "@/models";
+import { type NeighborhoodOptionType, AlgoSolution, NeighborhoodOption } from "@/models";
 import { Rectangle, Solution } from "@/models/binpacking";
 import { GeometryNeighborhood } from "./Geometry";
 import { PermutationNeighborhood } from "./Permutation";
 import { OverlapNeighborhood } from "./Overlap";
-import { type GreedyPlacement, GreedySelection } from "@/core/greedy";
+import { type GreedyPlacement, type GreedySelection } from "@/core/greedy";
 import type { Stats } from "@/core/local_search/Stats";
 
 export interface Neighborhood<SOL extends AlgoSolution> {
@@ -24,33 +20,13 @@ export function createNeighborhoodBinPack(
 ) {
     switch (option) {
         case NeighborhoodOption.GEOMETRY:
-            return new GeometryNeighborhood(
-                numNeighbors,
-                selection.items.length,
-                randomRate,
-                placement,
-            );
+            return new GeometryNeighborhood(numNeighbors, selection.items.length, randomRate, placement);
         case NeighborhoodOption.PERMUTATION:
-            return new PermutationNeighborhood(
-                numNeighbors,
-                selection.items.length,
-                randomRate,
-                placement,
-                selection,
-            );
+            return new PermutationNeighborhood(numNeighbors, selection.items.length, randomRate, placement, selection);
         case NeighborhoodOption.OVERLAP:
-            return new OverlapNeighborhood(
-                numNeighbors,
-                selection.items.length,
-                maxIters,
-            );
+            return new OverlapNeighborhood(numNeighbors, selection.items.length, maxIters);
         default: {
-            return new GeometryNeighborhood(
-                numNeighbors,
-                selection.items.length,
-                randomRate,
-                placement,
-            );
+            return new GeometryNeighborhood(numNeighbors, selection.items.length, randomRate, placement);
         }
     }
 }
