@@ -4,34 +4,21 @@ import { shuffle } from "@/core/local_search/helpers";
 
 export interface LocalSearchStrategy<SOL extends AlgoSolution> {
     // Pick the next neighbor (e.g., Tabu checks or SA probability)
-    pickNext(
-        neighbors: SOL[],
-        stats: Stats,
-        objective: ObjectiveFunction<SOL>,
-    ): [SOL | null, number];
+    pickNext(neighbors: SOL[], stats: Stats, objective: ObjectiveFunction<SOL>): [SOL | null, number];
 
     // Update internal state (e.g., cooling temperature or updating Tabu list)
-    update(nb: SOL | null, moveScore: number, stats: Stats): void;
+    update(nb: SOL | null, nbScore: number, stats: Stats): void;
 }
 
-export class HillClimbingStrategy<
-    SOL extends AlgoSolution,
-> implements LocalSearchStrategy<SOL> {
-    pickNext(
-        neighbors: SOL[],
-        stats: Stats,
-        objective: ObjectiveFunction<SOL>,
-    ): [SOL | null, number] {
+export class HillClimbingStrategy<SOL extends AlgoSolution> implements LocalSearchStrategy<SOL> {
+    pickNext(neighbors: SOL[], stats: Stats, objective: ObjectiveFunction<SOL>): [SOL | null, number] {
         let bestNb: SOL | null = null;
         let bestNbScore = stats.currentScore;
 
         // pick best neighbor (including the current solution)
         for (const nb of neighbors) {
             const nbScore = objective.score(nb);
-            if (
-                nbScore != null &&
-                objective.isBetterScore(nbScore, bestNbScore)
-            ) {
+            if (nbScore != null && objective.isBetterScore(nbScore, bestNbScore)) {
                 bestNb = nb;
                 bestNbScore = nbScore;
             }
@@ -50,9 +37,7 @@ export class HillClimbingStrategy<
         stats.iteration++;
     }
 }
-export class SimulatedAnnealingStrategy<
-    SOL extends AlgoSolution,
-> implements LocalSearchStrategy<SOL> {
+export class SimulatedAnnealingStrategy<SOL extends AlgoSolution> implements LocalSearchStrategy<SOL> {
     private temperature: number;
     private readonly TStart: number;
     private readonly maxIter: number;
@@ -67,11 +52,7 @@ export class SimulatedAnnealingStrategy<
         this.temperature = this.TStart;
     }
 
-    pickNext(
-        neighbors: SOL[],
-        stats: Stats,
-        objective: ObjectiveFunction<SOL>,
-    ): [SOL | null, number] {
+    pickNext(neighbors: SOL[], stats: Stats, objective: ObjectiveFunction<SOL>): [SOL | null, number] {
         if (neighbors.length === 0) return [null, stats.bestScore];
 
         // linear cooling
@@ -108,6 +89,10 @@ export class SimulatedAnnealingStrategy<
         if (nb) {
             stats.stagnationCounter = 0;
             stats.bestScore = nbScore;
+
+            // if (this.objective.isBetterScore(nextNbScore, stats.bestScore)) {
+            //     stats.bestScore = nextNbScore;
+            // }
         } else {
             stats.stagnationCounter++;
         }

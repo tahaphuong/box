@@ -38,9 +38,6 @@ export class LocalSearchAlgo<SOL extends AlgoSolution> implements AlgoInterface<
                 currentSolution = nextNb;
             }
             this.strategy.update(nextNb, nextNbScore, stats);
-            if (this.objective.isBetterScore(nextNbScore, stats.bestScore)) {
-                stats.bestScore = nextNbScore;
-            }
         }
         return currentSolution;
     }

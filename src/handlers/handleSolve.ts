@@ -10,9 +10,9 @@ import {
     iterAndStagnated,
     maxIterations,
     HillClimbingStrategy,
+    SimulatedAnnealingStrategy,
 } from "@/core/local_search";
 import { RandomOverlapPlacement } from "@/core/greedy/placement/RandomOverlapPlacement";
-// import { SimulatedAnnealingStrategy } from "@/core/local_search/LocalSearchStrategy";
 
 /**
  * Use Algo here based on user input
@@ -53,7 +53,10 @@ export function handleSolveBinPacking(
         case Algo.LOCAL: {
             let objective = new UltilizationBox();
             let terminate = iterAndStagnated(maxIters, 10); // max iter, stagnation threshold (early stop)
-            const strategy = new HillClimbingStrategy<Solution>();
+            const usual = true;
+            const strategy = usual
+                ? new HillClimbingStrategy<Solution>()
+                : new SimulatedAnnealingStrategy<Solution>({ maxIter: maxIters });
 
             switch (neighborhoodOpt) {
                 case NeighborhoodOption.GEOMETRY: {
@@ -79,9 +82,7 @@ export function handleSolveBinPacking(
                     }
                     terminate = maxIterations(maxIters);
                     objective = new PackingPenaltyObjective(0, maxIters);
-                    // strategy = new SimulatedAnnealingStrategy<Solution>({
-                    //     maxIter: maxIters,
-                    // });
+
                     const originalSelection = new OriginalSelection([...instance.rectangles]);
                     const randomPlacement = new RandomOverlapPlacement();
                     const greedyAlgo = new GreedyAlgo(originalSelection, randomPlacement);
